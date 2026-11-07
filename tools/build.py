@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "23"  # bump to make browsers reload css/js
+VER = "24"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -60,7 +60,7 @@ FOOTER = f'''  <footer class="site-footer">
           <p>First box ships January 1, 2027.</p>
         </div>
         <div>
-          <h4>Shop</h4>
+          <h3>Shop</h3>
           <ul>
             <li><a href="plans.html">Plans</a></li>
             <li><a href="plans.html#gifts">Gifts</a></li>
@@ -68,7 +68,7 @@ FOOTER = f'''  <footer class="site-footer">
           </ul>
         </div>
         <div>
-          <h4>Learn</h4>
+          <h3>Learn</h3>
           <ul>
             <li><a href="how-it-works.html">How it works</a></li>
             <li><a href="cities.html">2027 route</a></li>
@@ -76,7 +76,7 @@ FOOTER = f'''  <footer class="site-footer">
           </ul>
         </div>
         <div>
-          <h4>Help</h4>
+          <h3>Help</h3>
           <ul>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="faq.html#contact">Contact</a></li>
@@ -225,7 +225,7 @@ CLOUDS = '''<svg class="clouds" viewBox="0 0 1000 700" preserveAspectRatio="xMid
 ROT = "".join(f'<span class="rot-word{" is-on" if i == 0 else ""}">{c[3].split(",")[0]}.</span>' for i, c in enumerate(CITIES))
 
 def product(slug, name, tag, price, kicker, meta):
-    return f'''          <a class="product" href="plans.html">
+    return f'''          <a class="product" href="plans.html#{slug}">
             <div class="product-img">
               <span class="p-tag">{tag}</span><span class="p-price">${price}/mo</span>
               {shot(slug, f"The {name} box", "main")}{shot(slug + "-b", "", "alt")}
@@ -391,7 +391,8 @@ page("index.html", "Marlowby | A new U.S. city in a box, every month",
 # ================================================================== HOW IT WORKS
 hiw = f'''{page_head(("A city, packed", "into a box."), "Here is what happens between a city and your front door, and what you will find when you open the lid.")}
 
-    <section class="section section--tight" aria-label="Four steps">
+    <section class="section section--tight" aria-labelledby="steps-title">
+      <h2 id="steps-title" class="visually-hidden">Four steps</h2>
       <div class="container cards cards--4" data-rise-group>
         <div class="tile tile--sky"><span class="num">1</span><h3>Pick a size</h3><p>Postcard, Neighborhood or Grand Tour. Pay monthly, or yearly and save 15%.</p></div>
         <div class="tile tile--cream"><span class="num">2</span><h3>We go to the city</h3><p>We spend weeks meeting shop owners and buy their goods at fair prices, paid up front.</p></div>
@@ -439,7 +440,7 @@ def plan_card(name, price, desc, items, tone, shot_name, featured=False):
     lis = "".join(f"<li>{i}</li>" for i in items)
     flag = '<span class="plan-flag">Most picked</span>' if featured else ""
     btn = "btn--light" if tone == "navy" else "btn--primary"
-    return f'''          <article class="tile tile--{tone} plan" data-monthly="{price}">
+    return f'''          <article class="tile tile--{tone} plan" id="{shot_name}" data-monthly="{price}">
             {flag}
             <div class="plan-img">{shot(shot_name, "")}</div>
             <h2>The {name}</h2>
@@ -450,7 +451,8 @@ def plan_card(name, price, desc, items, tone, shot_name, featured=False):
             <a class="btn {btn} btn--block" href="join.html?plan={name.replace(" ", "%20")}">Choose {name}</a>
           </article>'''
 
-YES, NO = '<td class="yes">Yes</td>', '<td class="no">&ndash;</td>'
+YES = '<td class="yes">Yes</td>'
+NO = '<td class="no"><span aria-hidden="true">&ndash;</span><span class="visually-hidden">No</span></td>'
 plans = f'''{page_head(("Three sizes.", "Same city."), "Every plan has free shipping in the lower 48, the field guide and map, and can be skipped, paused or cancelled any month.")}
 
     <section class="section section--tight center" aria-label="Plans">
@@ -648,6 +650,7 @@ cities = f'''    <section class="c-hero">
           <div class="vote-list">
 {votes}
           </div>
+          <p class="visually-hidden" id="vote-status" role="status" aria-live="polite"></p>
         </div>
       </div>
     </section>
@@ -780,7 +783,8 @@ faq = f'''{page_head(("Questions,", "answered."), "Boxes, shipping, your account
         <div class="faq">
 {faq_html}
         </div>
-        <p class="faq-empty" role="status">Nothing matches that. Try another word, or write to us below.</p>
+        <p class="faq-empty">Nothing matches that. Try another word, or write to us below.</p>
+        <p class="visually-hidden" id="faq-count" role="status" aria-live="polite"></p>
       </div>
     </section>
 
@@ -824,14 +828,14 @@ join = f'''{page_head(("Reserve your", "first box."), "Takes about two minutes. 
           <form id="join-form" novalidate>
             <div class="form-step active">
               <h2>Choose a plan</h2>
-              <fieldset class="field" data-required>
+              <fieldset class="field" data-required aria-describedby="e-plan">
                 <legend>Box size</legend>
                 <div class="choice-grid">
                   <label class="choice"><input type="radio" name="plan" value="Postcard"><span class="choice-body"><strong>Postcard</strong><small>4&ndash;5 goods &middot; $29/mo</small></span></label>
                   <label class="choice"><input type="radio" name="plan" value="Neighborhood" checked><span class="choice-body"><strong>Neighborhood</strong><small>7&ndash;9 goods &middot; $49/mo</small></span></label>
                   <label class="choice"><input type="radio" name="plan" value="Grand Tour"><span class="choice-body"><strong>Grand Tour</strong><small>10&ndash;12 goods &middot; $79/mo</small></span></label>
                 </div>
-                <p class="error">Please choose a plan.</p>
+                <p class="error" id="e-plan">Please choose a plan.</p>
               </fieldset>
               <fieldset class="field">
                 <legend>Billing</legend>
@@ -853,14 +857,14 @@ join = f'''{page_head(("Reserve your", "first box."), "Takes about two minutes. 
 
             <div class="form-step">
               <h2>Where should it go?</h2>
-              <div class="field" data-required><label for="j-name">Full name</label><input id="j-name" name="name" required autocomplete="name"><p class="error">Please enter your name.</p></div>
-              <div class="field" data-required><label for="j-email">Email</label><input id="j-email" name="email" type="email" required autocomplete="email"><p class="error">Please enter a valid email.</p></div>
-              <div class="field" data-required><label for="j-street">Street address</label><input id="j-street" name="street" required autocomplete="street-address"><p class="error">Please enter a street address.</p></div>
+              <div class="field" data-required><label for="j-name">Full name</label><input id="j-name" name="name" required autocomplete="name" aria-describedby="e-name"><p class="error" id="e-name">Please enter your name.</p></div>
+              <div class="field" data-required><label for="j-email">Email</label><input id="j-email" name="email" type="email" required autocomplete="email" aria-describedby="e-email"><p class="error" id="e-email">Please enter a valid email.</p></div>
+              <div class="field" data-required><label for="j-street">Street address</label><input id="j-street" name="street" required autocomplete="street-address" aria-describedby="e-street"><p class="error" id="e-street">Please enter a street address.</p></div>
               <div class="field-row">
-                <div class="field" data-required><label for="j-city">City</label><input id="j-city" name="city" required autocomplete="address-level2"><p class="error">Please enter a city.</p></div>
+                <div class="field" data-required><label for="j-city">City</label><input id="j-city" name="city" required autocomplete="address-level2" aria-describedby="e-city"><p class="error" id="e-city">Please enter a city.</p></div>
                 <div class="field-row">
-                  <div class="field" data-required><label for="j-state">State</label><select id="j-state" name="state" required><option value="">Pick</option>{state_opts}</select><p class="error">Pick a state.</p></div>
-                  <div class="field" data-required><label for="j-zip">ZIP</label><input id="j-zip" name="zip" required pattern="[0-9]{{5}}" inputmode="numeric" maxlength="5" autocomplete="postal-code"><p class="error">5-digit ZIP.</p></div>
+                  <div class="field" data-required><label for="j-state">State</label><select id="j-state" name="state" required aria-describedby="e-state"><option value="">Pick</option>{state_opts}</select><p class="error" id="e-state">Pick a state.</p></div>
+                  <div class="field" data-required><label for="j-zip">ZIP</label><input id="j-zip" name="zip" required pattern="[0-9]{{5}}" inputmode="numeric" maxlength="5" autocomplete="postal-code" aria-describedby="e-zip"><p class="error" id="e-zip">5-digit ZIP.</p></div>
                 </div>
               </div>
               <div class="form-nav"><button type="button" class="btn btn--outline" data-prev>Back</button><button type="button" class="btn btn--primary" data-next>Review</button></div>
@@ -870,9 +874,9 @@ join = f'''{page_head(("Reserve your", "first box."), "Takes about two minutes. 
               <h2>Check and reserve</h2>
               <div class="summary-box" id="summary"></div>
               <div class="field" data-required style="margin-top:20px;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
-                <input type="checkbox" id="terms" name="terms" required style="width:auto;margin-top:5px">
+                <input type="checkbox" id="terms" name="terms" required aria-describedby="e-terms" style="width:auto;margin-top:5px">
                 <label for="terms" style="font-weight:500;flex:1">I understand reserving is free and I can cancel any time before my first box ships.</label>
-                <p class="error" style="flex-basis:100%">Please tick this box to continue.</p>
+                <p class="error" id="e-terms" style="flex-basis:100%">Please tick this box to continue.</p>
               </div>
               <div class="form-nav"><button type="button" class="btn btn--outline" data-prev>Back</button><button type="submit" class="btn btn--primary">Reserve my box</button></div>
             </div>
@@ -893,7 +897,8 @@ page("join.html", "Reserve a Box | Marlowby",
 # ================================================================== CREDITS
 credits = f'''{page_head(("Credits and", "sources."), "Every outside resource used to build this site, following the competition&rsquo;s copyright, fair use and AI usage rules.")}
 
-    <section class="section section--tight">
+    <section class="section section--tight" aria-labelledby="credits-title">
+      <h2 id="credits-title" class="visually-hidden">Sources and credits</h2>
       <div class="container" style="max-width:880px">
         <ul class="rule-list credits">
           <li><h3>About this site</h3><p>Marlowby is a fictional company. This site is a concept made for a student web design competition. The test-box quotes, makers, products and vote counts are illustrative, not real people or businesses.</p></li>
@@ -910,6 +915,30 @@ credits = f'''{page_head(("Credits and", "sources."), "Every outside resource us
     </section>'''
 page("credits.html", "Credits & Sources | Marlowby",
      "Credits, sources, licenses and AI usage citation for the Marlowby concept website.", credits)
+
+# ================================================================== 404
+notfound = f'''{page_head(("That page took", "a wrong turn."), "We could not find that page. It may have moved, or the link may have a typo.")}
+
+    <section class="section section--tight">
+      <div class="container">
+        <div class="tile tile--sky split">
+          <div>
+            <h2>Try one of these</h2>
+            <p class="muted">Everything on the site is a click away from here.</p>
+          </div>
+          <ul class="rule-list">
+            <li><a class="link" href="index.html">Home</a> &mdash; the first box and the three sizes</li>
+            <li><a class="link" href="how-it-works.html">How it works</a> &mdash; city to doorstep, step by step</li>
+            <li><a class="link" href="plans.html">Plans</a> &mdash; compare Postcard, Neighborhood and Grand Tour</li>
+            <li><a class="link" href="cities.html">Cities</a> &mdash; the 2027 route and box calendar</li>
+            <li><a class="link" href="faq.html">FAQ</a> &mdash; skipping, allergies, shipping and gifts</li>
+          </ul>
+        </div>
+        <a class="btn-mega" href="index.html">Back to the home page <span aria-hidden="true">&rarr;</span></a>
+      </div>
+    </section>'''
+page("404.html", "Page not found | Marlowby",
+     "That page could not be found. Here are the main pages of the Marlowby site.", notfound)
 
 (OUT / "img" / "favicon.svg").write_text((OUT / "img" / "mark.svg").read_text())
 print("built", sorted(p.name for p in OUT.glob("*.html")))

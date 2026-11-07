@@ -11,9 +11,16 @@
 .sky {
   grid-column: 1 / span 9; position: relative; overflow: hidden; border-radius: var(--r-lg);
   min-height: min(76vh, 700px); color: #fff;
-  background: linear-gradient(180deg, #3d6fd0 0%, #6f98e2 42%, #a9c6f1 78%, #d3e2f8 100%);
+  background: linear-gradient(180deg, #1e3f8a 0%, #3a68c8 30%, #6f98e2 58%, #a9c6f1 84%, #d3e2f8 100%);
 }
-.clouds { position: absolute; inset: -12% -6% -30%; width: 112%; height: 142%; max-width: none; pointer-events: none; will-change: transform; }
+.clouds { position: absolute; inset: -12% -6% -30%; width: 112%; height: 142%; max-width: none; pointer-events: none; will-change: transform; z-index: 0; }
+/* Scrim over the clouds, under the words. The clouds drift, so without this the
+   headline and the rotating city name lose contrast whenever one passes behind. */
+.sky::after {
+  content: ""; position: absolute; inset: 0 0 auto; height: 58%; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(10, 24, 66, .66) 0%, rgba(10, 24, 66, .52) 42%, rgba(10, 24, 66, 0) 100%);
+}
+.sky-title, .sky-wm { z-index: 2; }
 .sky-title {
   position: absolute; left: clamp(22px, 4.2%, 56px); top: clamp(24px, 6%, 56px); margin: 0;
   font-size: clamp(1.7rem, 3vw, 2.7rem); line-height: 1.05; letter-spacing: -.025em;
@@ -66,7 +73,7 @@
 .product-img img.alt { opacity: 0; }
 .product:hover .product-img img.main, .product:focus-visible .product-img img.main { opacity: 0; transform: scale(1.03); }
 .product:hover .product-img img.alt, .product:focus-visible .product-img img.alt { opacity: 1; transform: scale(1.03); }
-.product .tag { display: block; min-height: 1.4em; margin-top: 18px; color: var(--blue); font-weight: 700; font-size: .85rem; }
+.product .tag { display: block; min-height: 1.4em; margin-top: 18px; color: var(--blue-ink); font-weight: 700; font-size: .85rem; }
 .product h3 { margin: 4px 0 2px; font-size: 1.3rem; }
 .product .meta { color: var(--muted); margin: 0; }
 .product .price-line { font-weight: 600; margin-top: 4px; }
@@ -126,7 +133,7 @@
 .p-tag, .p-price { position: absolute; top: 16px; z-index: 2; font-size: .82rem; font-weight: 600; }
 .p-tag { left: 16px; padding: 5px 12px; border: 1.5px solid var(--navy); border-radius: 999px; }
 .p-price { right: 18px; top: 21px; }
-.p-kicker { margin: 18px 0 2px; font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--blue); }
+.p-kicker { margin: 18px 0 2px; font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--blue-ink); }
 .p-name { font-size: 1.6rem; margin: 0 0 4px; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: transparent; transition: text-decoration-color .25s; }
 .product:hover .p-name { text-decoration-color: var(--amber); }
 
@@ -170,7 +177,7 @@
 .route-card:hover img { transform: translateY(-6px) rotate(-2deg); }
 .route-card h3 { font-size: clamp(1.7rem, 2.6vw, 2.2rem); margin: 4px 0 0; }
 .r-pill { align-self: flex-start; padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, .7); font-size: .82rem; font-weight: 600; }
-.r-plus { position: absolute; top: 14px; right: 14px; z-index: 3; width: 40px; height: 40px; border-radius: 50%; border: 0; background: #fff; cursor: pointer; display: grid; place-items: center; }
+.r-plus { position: absolute; top: 14px; right: 14px; z-index: 3; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff; cursor: pointer; display: grid; place-items: center; }
 .r-plus span, .r-plus span::after { display: block; width: 14px; height: 2.5px; border-radius: 2px; background: var(--navy); transition: transform .35s; }
 .r-plus span::after { content: ""; transform: rotate(90deg); }
 .route-card.open .r-plus span { transform: rotate(135deg); }

@@ -22,19 +22,6 @@
     });
   }
 
-  /* ---------- Reveal on scroll ---------- */
-  const reveals = document.querySelectorAll(".reveal");
-  if ("IntersectionObserver" in window) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((en) => {
-        if (en.isIntersecting) { en.target.classList.add("visible"); io.unobserve(en.target); }
-      });
-    }, { threshold: 0.12 });
-    reveals.forEach((el) => io.observe(el));
-  } else {
-    reveals.forEach((el) => el.classList.add("visible"));
-  }
-
   /* ---------- Launch countdown (home banner) ---------- */
   const cd = document.getElementById("countdown");
   if (cd) {
@@ -144,10 +131,14 @@
         btn.textContent = mine ? "Voted ✓" : "Vote";
       });
     };
+    const status = document.getElementById("vote-status");
     items.forEach((it) => it.querySelector("button").addEventListener("click", () => {
       voted = voted === it.dataset.city ? null : it.dataset.city;
       try { voted ? localStorage.setItem("marlowby-vote", voted) : localStorage.removeItem("marlowby-vote"); } catch (e) {}
       render();
+      if (status) status.textContent = voted
+        ? `Voted for ${voted}. It now has ${it.querySelector(".pct").textContent}.`
+        : `Vote for ${it.dataset.city} removed.`;
     }));
     render();
   }
@@ -158,6 +149,7 @@
     const search = document.getElementById("faq-search");
     const filterBtns = document.querySelectorAll(".faq-filters button");
     const empty = document.querySelector(".faq-empty");
+    const count = document.getElementById("faq-count");
     let cat = "all";
     const apply = () => {
       const q = search.value.trim().toLowerCase();
@@ -170,6 +162,9 @@
         if (ok) shown++;
       });
       empty.style.display = shown ? "none" : "block";
+      if (count) count.textContent = shown
+        ? `${shown} ${shown === 1 ? "answer" : "answers"} shown`
+        : "No answers match";
     };
     filterBtns.forEach((b) => b.addEventListener("click", () => {
       cat = b.dataset.cat;
@@ -219,6 +214,8 @@
         if (input.type === "radio") valid = !!step.querySelector(`input[name=${input.name}]:checked`);
         else valid = input.value.trim() !== "" && input.checkValidity();
         f.classList.toggle("invalid", !valid);
+        (input.type === "radio" ? [...step.querySelectorAll(`input[name=${input.name}]`)] : [input])
+          .forEach((el) => el.setAttribute("aria-invalid", String(!valid)));
         if (!valid && ok) { input.focus(); ok = false; }
       });
       return ok;
@@ -250,7 +247,9 @@
     });
     join.addEventListener("input", (e) => {
       const f = e.target.closest(".field.invalid");
-      if (f) f.classList.remove("invalid");
+      if (!f) return;
+      f.classList.remove("invalid");
+      f.querySelectorAll("[aria-invalid]").forEach((el) => el.setAttribute("aria-invalid", "false"));
     });
     join.addEventListener("submit", (e) => {
       e.preventDefault();
