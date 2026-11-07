@@ -1,0 +1,10 @@
+/* ==========================================================
+   Type rules (loaded last on every page). Kept strict:
+   Nunito  – every heading, title, number and button
+   Figtree – all running text, nav, chips, labels
+   Instrument Serif italic – only the accent phrase in a few
+             big headings, the rotating hero city, and quotes
+   DM Mono – only tiny tags: pills, ticker, product tags, dates
+   ========================================================== */
+.rotator { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 1.12em; letter-spacing: 0; }
+.quotes blockquote { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 1.6rem; line-height: 1.22; }

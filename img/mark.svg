@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130">
+  <g stroke="#14234F" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- inside of the open box -->
+    <polygon points="12.5,63.75 60,52 103.75,63.75 51.25,76.25" fill="#F3D9BC"/>
+    <!-- skyline -->
+    <rect x="17" y="52" width="9" height="20" fill="#3F6FD1"/>
+    <rect x="22" y="41" width="17" height="31" fill="#3F6FD1"/>
+    <path d="M45.5 10 V22" fill="none"/>
+    <rect x="42.5" y="22" width="6" height="7" fill="#3F6FD1"/>
+    <rect x="39.5" y="28.5" width="12" height="44" fill="#3F6FD1"/>
+    <path d="M68 19 V29" fill="none"/>
+    <path d="M57 40 a11 11 0 0 1 22 0 z" fill="#AFCBF3"/>
+    <rect x="56" y="40" width="24" height="32" fill="#AFCBF3"/>
+    <circle cx="93.5" cy="50" r="12" fill="none"/>
+    <path d="M93.5 38 V62 M81.5 50 H105.5 M85 41.5 L102 58.5 M102 41.5 L85 58.5" fill="none" stroke-width="2"/>
+  </g>
+  <g fill="#14234F">
+    <rect x="59.5" y="45" width="2" height="4" rx="1"/><rect x="64" y="45" width="2" height="4" rx="1"/><rect x="68.5" y="45" width="2" height="4" rx="1"/><rect x="73" y="45" width="2" height="4" rx="1"/>
+    <rect x="59.5" y="53" width="2" height="4" rx="1"/><rect x="64" y="53" width="2" height="4" rx="1"/><rect x="68.5" y="53" width="2" height="4" rx="1"/><rect x="73" y="53" width="2" height="4" rx="1"/>
+  </g>
+  <g stroke="#F7B731" stroke-width="4.5" stroke-linecap="round">
+    <path d="M86.5 5 L88 18.5"/><path d="M105 11.5 L96.5 22.5"/><path d="M113.5 25 L103.5 31"/>
+  </g>
+  <!-- box -->
+  <g stroke="#14234F" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round">
+    <polygon points="12.5,63.75 51.25,76.25 51.25,125 13.75,107.5" fill="#FCEAD6"/>
+    <polygon points="51.25,76.25 103.75,63.75 106.25,108.75 51.25,125" fill="#FDF1E4"/>
+    <polygon points="12.5,63.75 51.25,76.25 35,88.75 2,78.75" fill="#FDF1E4"/>
+    <polygon points="51.25,76.25 103.75,63.75 116.25,80 65,88.75" fill="#FDF1E4"/>
+  </g>
+  <path d="M77.5 92.5c-3.6 0-6.3 2.8-6.3 6.2 0 4.6 6.3 10.6 6.3 10.6s6.3-6 6.3-10.6c0-3.4-2.7-6.2-6.3-6.2zm0 4a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 0 1 0-4.6z" fill="#14234F" fill-rule="evenodd"/>
+  <g stroke="#6E86B8" stroke-width="2.6" stroke-linecap="round">
+    <path d="M88 99 L99 96.5"/><path d="M88 104.5 L99 102"/>
+  </g>
+</svg>
