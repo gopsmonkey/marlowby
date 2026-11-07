@@ -2,6 +2,8 @@
 
 Concept website for **Marlowby**, a monthly subscription box of local products, small businesses and experiences from a different U.S. city each month. Built for a student web design competition.
 
+**Live site:** https://gopsmonkey.github.io/marlowby/
+
 ## Pages
 `index.html` (home), `how-it-works.html`, `plans.html`, `cities.html`, `about.html`, `faq.html`, `join.html`, `credits.html`
 
