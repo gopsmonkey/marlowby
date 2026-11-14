@@ -198,13 +198,13 @@ def mini_map():
 CLOUDS = '''<svg class="clouds" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true" data-parallax="-8">
           <defs>
             <filter id="cloud" x="-50%" y="-150%" width="200%" height="400%">
-              <feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="5" seed="7"/>
-              <feDisplacementMap in="SourceGraphic" scale="90"/>
+              <feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="5" seed="7" result="noise"/>
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="90"/>
               <feGaussianBlur stdDeviation="7"/>
             </filter>
             <filter id="cloud-soft" x="-50%" y="-150%" width="200%" height="400%">
-              <feTurbulence type="fractalNoise" baseFrequency=".008" numOctaves="4" seed="3"/>
-              <feDisplacementMap in="SourceGraphic" scale="120"/>
+              <feTurbulence type="fractalNoise" baseFrequency=".008" numOctaves="4" seed="3" result="noise-soft"/>
+              <feDisplacementMap in="SourceGraphic" in2="noise-soft" scale="120"/>
               <feGaussianBlur stdDeviation="14"/>
             </filter>
           </defs>
@@ -345,7 +345,7 @@ home = f'''    <div class="gl-zone">
           <button type="button" aria-label="More cities"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
         </div>
       </div>
-      <div class="route-track" tabindex="0" aria-label="Box cities, January to August 2027">
+      <div class="route-track" role="group" tabindex="0" aria-label="Box cities, January to August 2027">
 {chr(10).join(route_card(i, c) for i, c in enumerate(CITIES))}
       </div>
       <div class="container route-foot">
@@ -453,7 +453,7 @@ def plan_card(name, price, desc, items, tone, shot_name, featured=False):
 
 YES = '<td class="yes">Yes</td>'
 NO = '<td class="no"><span aria-hidden="true">&ndash;</span><span class="visually-hidden">No</span></td>'
-plans = f'''{page_head(("Three sizes.", "Same city."), "Every plan has free shipping in the lower 48, the field guide and map, and can be skipped, paused or cancelled any month.")}
+plans = f'''{page_head(("Three sizes.", "Same city."), "Every plan has free shipping in the lower 48, the field guide and map, and can be skipped, paused or canceled any month.")}
 
     <section class="section section--tight center" aria-label="Plans">
       <div class="container">
@@ -809,7 +809,7 @@ faq = f'''{page_head(("Questions,", "answered."), "Boxes, shipping, your account
       </div>
     </section>'''
 page("faq.html", "FAQ & Contact | Marlowby",
-     "Answers about Marlowby boxes, shipping, skipping, cancelling and gift subscriptions, plus how to contact us.", faq)
+     "Answers about Marlowby boxes, shipping, skipping, canceling and gift subscriptions, plus how to contact us.", faq)
 
 # ================================================================== JOIN
 STATES = "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY".split()
@@ -859,7 +859,7 @@ join = f'''{page_head(("Reserve your", "first box."), "Takes about two minutes. 
               <h2>Where should it go?</h2>
               <div class="field" data-required><label for="j-name">Full name</label><input id="j-name" name="name" required autocomplete="name" aria-describedby="e-name"><p class="error" id="e-name">Please enter your name.</p></div>
               <div class="field" data-required><label for="j-email">Email</label><input id="j-email" name="email" type="email" required autocomplete="email" aria-describedby="e-email"><p class="error" id="e-email">Please enter a valid email.</p></div>
-              <div class="field" data-required><label for="j-street">Street address</label><input id="j-street" name="street" required autocomplete="street-address" aria-describedby="e-street"><p class="error" id="e-street">Please enter a street address.</p></div>
+              <div class="field" data-required><label for="j-street">Street address</label><input id="j-street" name="street" required autocomplete="address-line1" aria-describedby="e-street"><p class="error" id="e-street">Please enter a street address.</p></div>
               <div class="field-row">
                 <div class="field" data-required><label for="j-city">City</label><input id="j-city" name="city" required autocomplete="address-level2" aria-describedby="e-city"><p class="error" id="e-city">Please enter a city.</p></div>
                 <div class="field-row">
