@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "30"  # bump to make browsers reload css/js
+VER = "33"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '

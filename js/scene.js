@@ -578,6 +578,7 @@
     if (!canvas || !stage) return null;
 
     const r = makeRenderer(canvas);
+    r.localClippingEnabled = true;
     const scene = new THREE.Scene();
     const env = makeEnvironment(r);
     scene.environment = env;
@@ -638,42 +639,92 @@
     mkFlap(W * 0.46, D, "x", 1, [W / 2, 0]);
     root.add(carton);
 
-    // ---- the skyline that rises out of it, drawn from the logo ----
+    // ---- the month's real skyline, rising out of the carton ----
+    // Clipped at the carton rim, so while it is down it is genuinely hidden
+    // inside the box rather than hanging below it.
+    const RIM = H / 2 - 6;
+    const rimClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), -RIM);
+    const cityMat = (hex, rough = 0.82) =>
+      std({ color: srgb(hex), roughness: rough, envMapIntensity: 0.9, clippingPlanes: [rimClip] });
+
+    const STONE = cityMat("#E7EEFA", 0.86);   // pale limestone, the historic district
+    const BRICK = cityMat("#9FB8E4");         // mid blue, the low rowhouses
+    const DEEP = cityMat("#5C84D6");          // the taller massing
+    const GOLD = cityMat("#F7B731", 0.42);    // City Hall's gilded dome
+    const INK = cityMat("#14234F", 0.7);      // windows, crosses, cables
+    const LEAF = cityMat("#7FA8C9", 0.9);     // live oaks, kept in the blue family
+
     const city = new THREE.Group();
-    const towerMat = paperMat("#9FC0EF");
-    const towerAlt = paperMat("#6E96DE");
-    const domeMat = paperMat("#AFCBF3");
-    const inkMat = std({ color: srgb(C.navy), roughness: 0.7 });
-    // [x, width, height, depth]
-    [[-74, 34, 96, 34], [-36, 40, 150, 38], [6, 36, 214, 36], [48, 30, 132, 32], [82, 26, 88, 30]]
-      .forEach(([x, w, h, d], i) => {
-        const t = new THREE.Mesh(new THREE.RoundedBoxGeometry(w, h, d, 2, 2), i % 2 ? towerAlt : towerMat);
-        t.position.set(x, h / 2, (i % 2 ? -1 : 1) * 10);
-        city.add(t);
-        // windows, as a strip of small navy squares
-        for (let row = 0; row < Math.floor(h / 26); row++) {
-          const win = new THREE.Mesh(new THREE.BoxGeometry(w * 0.52, 7, 1.5), inkMat);
-          win.position.set(x, 18 + row * 26, (i % 2 ? -1 : 1) * 10 + d / 2 + 0.8);
-          city.add(win);
+    const add = (mesh, x, y, z = 0) => { mesh.position.set(x, y, z); city.add(mesh); return mesh; };
+    const boxOf = (w, h, d, mat) => new THREE.Mesh(new THREE.RoundedBoxGeometry(w, h, d, 2, 1.6), mat);
+
+    // Savannah, Box No. 01. Left to right: a live oak, the twin spires of the
+    // Cathedral of St John the Baptist, City Hall's gold dome, the rowhouses
+    // along the squares, and a pylon of the Talmadge Memorial Bridge.
+    function liveOak(x, scale = 1) {
+      const trunk = boxOf(10 * scale, 86 * scale, 10 * scale, cityMat("#6E86B8", 0.9));
+      add(trunk, x, 43 * scale, 6);
+      // a broad low crown, the way the oaks on the squares actually spread
+      [[0, 104, 34], [-26, 94, 26], [27, 96, 27], [3, 122, 23]].forEach(([dx, dy, r]) => {
+        const c = new THREE.Mesh(new THREE.SphereGeometry(r * scale, 20, 14), LEAF);
+        c.scale.y = 0.66;
+        add(c, x + dx * scale, dy * scale, 6);
+      });
+    }
+
+    function cathedral(x) {
+      add(boxOf(54, 82, 40, STONE), x, 41, 0);                 // nave
+      [-17, 17].forEach((dx) => {
+        add(boxOf(19, 150, 19, STONE), x + dx, 75, 2);          // tower
+        const spire = new THREE.Mesh(new THREE.ConeGeometry(13, 54, 4), DEEP);
+        spire.rotation.y = Math.PI / 4;
+        add(spire, x + dx, 177, 2);
+        add(boxOf(2.6, 15, 2.6, INK), x + dx, 211, 2);          // cross
+        add(boxOf(9, 2.6, 2.6, INK), x + dx, 207, 2);
+      });
+      add(boxOf(16, 18, 2, INK), x, 62, 20.5);                  // rose window
+    }
+
+    function cityHall(x) {
+      add(boxOf(58, 62, 46, STONE), x, 31, 0);
+      add(boxOf(40, 20, 40, STONE), x, 72, 0);                  // drum base
+      const drum = new THREE.Mesh(new THREE.CylinderGeometry(19, 19, 26, 24), STONE);
+      add(drum, x, 95, 0);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(19, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2), GOLD);
+      add(dome, x, 108, 0);
+      add(boxOf(3, 20, 3, GOLD), x, 128, 0);                    // finial
+    }
+
+    function rowhouses(x0) {
+      [[0, 30, 56], [32, 26, 48], [60, 30, 64], [92, 24, 44]].forEach(([dx, w, h], i) => {
+        add(boxOf(w, h, 34, i % 2 ? BRICK : DEEP), x0 + dx, h / 2, -4);
+        for (let row = 0; row < Math.floor(h / 22); row++) {    // windows
+          add(boxOf(w * 0.5, 6, 1.6, INK), x0 + dx, 14 + row * 22, 13.2);
         }
       });
-    // the domed building from the logo
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(24, 32, 18, 0, Math.PI * 2, 0, Math.PI / 2), domeMat);
-    dome.position.set(-36, 150, 10);
-    city.add(dome);
-    const spire = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 26, 10), inkMat);
-    spire.position.set(6, 227, 10);
-    city.add(spire);
-    // amber sparks, the three dashes above the logo's skyline
+    }
+
+    // Kept inside the carton footprint (half-width 115) so nothing floats
+    // beside the box once the clip plane reveals it.
+    liveOak(-96, 0.80);
+    cathedral(-48);
+    cityHall(10);
+    rowhouses(48);
+    liveOak(100, 0.66);
+
+    // the three amber sparks from the logo, above the rooftops
     const sparks = [];
-    [[-22, 262, -26], [8, 276, 0], [40, 262, 26]].forEach(([x, y, rot]) => {
-      const sp = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.4, 20, 10), std({ color: srgb(C.amber), roughness: 0.4 }));
+    [[-96, 252, -24], [-6, 268, 0], [84, 252, 24]].forEach(([x, y, rot]) => {
+      const sp = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.4, 20, 10),
+        std({ color: srgb(C.amber), roughness: 0.4, clippingPlanes: [rimClip] }));
       sp.position.set(x, y, 10);
       sp.rotation.z = rot * DEG;
       city.add(sp); sparks.push(sp);
+      sp.userData.baseY = y;
     });
-    const CITY_DOWN = -H * 0.95;       // tucked out of sight inside the carton
-    const CITY_UP = H / 2 - 24;        // seated in the mouth, skyline fully clear
+
+    const CITY_DOWN = -H * 1.45;       // fully below the rim, and clipped besides
+    const CITY_UP = H / 2 - 8;         // seated in the mouth, rooftops clear
     city.position.y = CITY_DOWN;
     root.add(city);
 
@@ -709,9 +760,9 @@
       // 1. the flaps fold back
       const open = easeOut(smooth(0.06, 0.40, o));
       flaps.forEach((f) => {
-        const a = open * 116 * DEG * f.userData.sign;
-        if (f.userData.axis === "z") f.rotation.x = -a;
-        else f.rotation.z = a;
+        const a = open * 158 * DEG * f.userData.sign;
+        if (f.userData.axis === "z") f.rotation.x = a;
+        else f.rotation.z = -a;
       });
 
       // 2. the city rises out, overshooting a touch so it reads as a pop
@@ -721,9 +772,8 @@
       city.scale.setScalar(lerp(0.82, 1, pop));
       city.visible = riseT > 0.001;
       sparks.forEach((sp, i) => {
-        sp.material.opacity = 1;
         const w = reduce ? 0 : Math.sin(t * 2.2 + i) * 3;
-        sp.position.y = [262, 276, 262][i] + w * pop;
+        sp.position.y = sp.userData.baseY + w * pop;
       });
 
       // 3. boxes tip off the skyline and fall away
