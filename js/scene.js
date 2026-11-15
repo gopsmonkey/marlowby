@@ -790,6 +790,10 @@
         mesh.scale.setScalar(lerp(0.55, 1.05, easeOut(clamp(f * 2.2))));
       });
 
+      // name the city the moment the skyline is properly out of the box
+      const phase = riseT > 0.42 ? "reveal" : "ask";
+      if (stage.dataset.phase !== phase) stage.dataset.phase = phase;
+
       // gentle turn so it never looks frozen
       root.rotation.y = (reduce ? -18 : -18 + Math.sin(t * 0.35) * 5 + o * 26) * DEG;
       root.rotation.x = lerp(6, -2, o) * DEG;

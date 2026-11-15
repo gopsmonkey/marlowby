@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "33"  # bump to make browsers reload css/js
+VER = "35"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -391,6 +391,12 @@ home = f'''    <div class="gl-zone">
       </div>
       <div class="open-stage">
         <canvas class="open-canvas" aria-hidden="true"></canvas>
+        <div class="open-caption">
+          <p class="open-reveal">
+            <span class="or-ask">This month&rsquo;s city is<span class="or-dots" aria-hidden="true"><i></i><i></i><i></i></span></span>
+            <span class="or-city">Savannah, Georgia</span>
+          </p>
+        </div>
         <p class="open-fallback">A box opening, with a city skyline rising out of it and next month&rsquo;s boxes tumbling off the rooftops.</p>
       </div>
     </section>

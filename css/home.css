@@ -253,3 +253,43 @@
 .open-failed .open-fallback { display: block; max-width: 54ch; margin: 0 auto;
   padding: clamp(32px, 6vw, 72px) var(--gutter); text-align: center; color: var(--muted); }
 .open-failed .open-stage { height: auto; }
+
+/* ---------- "This month's city is..." reveal ---------- */
+.open-caption {
+  position: sticky; top: 0; height: 100vh; margin-top: -100vh;
+  display: grid; align-content: end; justify-items: center;
+  padding-bottom: clamp(44px, 9vh, 104px); pointer-events: none; z-index: 2;
+}
+.open-reveal { margin: 0; text-align: center; display: grid; }
+.open-reveal > span { grid-area: 1 / 1; transition: opacity .45s ease, transform .55s cubic-bezier(.2, .8, .2, 1); }
+
+.or-ask {
+  font-family: var(--mono); font-size: clamp(.82rem, 1.5vw, 1rem);
+  letter-spacing: .04em; color: var(--muted); align-self: end;
+}
+.or-dots { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: 1px; }
+.or-dots i { width: 3px; height: 3px; border-radius: 50%; background: currentColor; animation: or-pulse 1.4s infinite; }
+.or-dots i:nth-child(2) { animation-delay: .18s; }
+.or-dots i:nth-child(3) { animation-delay: .36s; }
+@keyframes or-pulse { 0%, 60%, 100% { opacity: .25; } 30% { opacity: 1; } }
+
+.or-city {
+  font-family: var(--display); font-weight: 900; letter-spacing: -.025em;
+  font-size: clamp(1.9rem, 5vw, 3.6rem); line-height: 1.05; color: var(--navy);
+  opacity: 0; transform: translateY(18px);
+  text-decoration: underline; text-decoration-color: var(--amber);
+  text-decoration-thickness: 5px; text-underline-offset: 10px;
+}
+.open-stage[data-phase="reveal"] .or-ask { opacity: 0; transform: translateY(-10px); }
+.open-stage[data-phase="reveal"] .or-city { opacity: 1; transform: none; }
+
+/* No WebGL, or the scene failed: show the whole line, no animation. */
+.no-gl .open-caption, .open-failed .open-caption { position: static; height: auto; margin-top: 0; padding: 0 0 24px; }
+.no-gl .or-ask, .open-failed .or-ask { position: static; opacity: 1; transform: none; }
+.no-gl .or-city, .open-failed .or-city { opacity: 1; transform: none; }
+.no-gl .open-reveal, .open-failed .open-reveal { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .open-reveal > span { transition: none; }
+  .or-dots i { animation: none; opacity: .6; }
+}
