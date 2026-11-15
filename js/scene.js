@@ -71,6 +71,7 @@
   const lerp = (a, b, t) => a + (b - a) * t;
   const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  const easeIn = (t) => t * t;
   const smooth = (a, b, t) => { const x = clamp((t - a) / (b - a)); return x * x * (3 - 2 * x); };
   const srgb = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 
@@ -551,10 +552,213 @@
     }
   }
 
+  let openScene = null;
   function loop(now) {
     const r = zone.getBoundingClientRect();
     if (r.bottom > -100 && r.top < innerHeight + 100) frame(now, false);
+    if (openScene) {
+      const o = openScene.sec.getBoundingClientRect();
+      if (o.bottom > -200 && o.top < innerHeight + 200) {
+        try { openScene.render(now, false); }
+        catch (err) { console.error("open scene frame failed:", err); openScene = null; }
+      }
+    }
     requestAnimationFrame(loop);
+  }
+
+  /* ==========================================================
+     "Open the box": the lid folds back, the city rises out of it,
+     and the next months' boxes rain off the skyline. Scroll-driven,
+     on its own canvas so the falling-box scene above is untouched.
+     ========================================================== */
+  function initOpenScene() {
+    const sec = document.querySelector(".open-zone");
+    const canvas = sec && sec.querySelector(".open-canvas");
+    const stage = sec && sec.querySelector(".open-stage");
+    if (!canvas || !stage) return null;
+
+    const r = makeRenderer(canvas);
+    const scene = new THREE.Scene();
+    const env = makeEnvironment(r);
+    scene.environment = env;
+    const cam = new THREE.PerspectiveCamera(34, 1, 10, 4000);
+    const AIM = new THREE.Vector3(0, 128, 0);
+    cam.position.set(0, 170, 930);
+    cam.lookAt(AIM);
+
+    const key = keyLight(1.35);
+    key.position.copy(KEY_DIR).multiplyScalar(900);
+    scene.add(key, new THREE.AmbientLight(0xdfe8f8, 0.55));
+
+    const root = new THREE.Group();
+    scene.add(root);
+
+    // ---- the open carton: four walls, a base, four hinged flaps ----
+    const W = 230, H = 150, D = 185, T = 7;
+    const paperMat = (hex) => std({ color: srgb(hex), roughness: 0.86, envMapIntensity: 0.85 });
+    const wallMat = paperMat("#F2DEC2");
+    const inner = paperMat("#E3CBA9");
+
+    const carton = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.RoundedBoxGeometry(W, T, D, 2, 2), inner);
+    base.position.y = -H / 2;
+    carton.add(base);
+    const wallGeoX = new THREE.RoundedBoxGeometry(T, H, D, 2, 2);
+    const wallGeoZ = new THREE.RoundedBoxGeometry(W, H, T, 2, 2);
+    [[-W / 2, 0, 0, wallGeoX], [W / 2, 0, 0, wallGeoX],
+     [0, 0, -D / 2, wallGeoZ], [0, 0, D / 2, wallGeoZ]].forEach(([x, y, z, g]) => {
+      const m = new THREE.Mesh(g, wallMat);
+      m.position.set(x, y, z);
+      carton.add(m);
+    });
+    // front wall gets the wordmark so the carton still reads as a Marlowby box
+    const face = new THREE.Mesh(
+      new THREE.PlaneGeometry(W * 0.92, H * 0.78),
+      new THREE.MeshStandardMaterial({ map: frontTex(SAVANNAH, { w: W, h: H, d: D }), roughness: 0.85, transparent: true }));
+    face.position.set(0, -4, D / 2 + T / 2 + 0.6);
+    carton.add(face);
+
+    // four flaps, each hinged on its own pivot at the carton's rim
+    const flaps = [];
+    const mkFlap = (w, d, axis, sign, pos) => {
+      const pivot = new THREE.Group();
+      pivot.position.set(pos[0], H / 2, pos[1]);
+      const panel = new THREE.Mesh(new THREE.RoundedBoxGeometry(w, T, d, 2, 2), wallMat);
+      panel.position.set(axis === "x" ? (sign * w) / 2 : 0, 0, axis === "z" ? (sign * d) / 2 : 0);
+      pivot.add(panel);
+      pivot.userData = { axis, sign };
+      carton.add(pivot);
+      flaps.push(pivot);
+    };
+    mkFlap(W, D * 0.46, "z", -1, [0, -D / 2]);
+    mkFlap(W, D * 0.46, "z", 1, [0, D / 2]);
+    mkFlap(W * 0.46, D, "x", -1, [-W / 2, 0]);
+    mkFlap(W * 0.46, D, "x", 1, [W / 2, 0]);
+    root.add(carton);
+
+    // ---- the skyline that rises out of it, drawn from the logo ----
+    const city = new THREE.Group();
+    const towerMat = paperMat("#9FC0EF");
+    const towerAlt = paperMat("#6E96DE");
+    const domeMat = paperMat("#AFCBF3");
+    const inkMat = std({ color: srgb(C.navy), roughness: 0.7 });
+    // [x, width, height, depth]
+    [[-74, 34, 96, 34], [-36, 40, 150, 38], [6, 36, 214, 36], [48, 30, 132, 32], [82, 26, 88, 30]]
+      .forEach(([x, w, h, d], i) => {
+        const t = new THREE.Mesh(new THREE.RoundedBoxGeometry(w, h, d, 2, 2), i % 2 ? towerAlt : towerMat);
+        t.position.set(x, h / 2, (i % 2 ? -1 : 1) * 10);
+        city.add(t);
+        // windows, as a strip of small navy squares
+        for (let row = 0; row < Math.floor(h / 26); row++) {
+          const win = new THREE.Mesh(new THREE.BoxGeometry(w * 0.52, 7, 1.5), inkMat);
+          win.position.set(x, 18 + row * 26, (i % 2 ? -1 : 1) * 10 + d / 2 + 0.8);
+          city.add(win);
+        }
+      });
+    // the domed building from the logo
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(24, 32, 18, 0, Math.PI * 2, 0, Math.PI / 2), domeMat);
+    dome.position.set(-36, 150, 10);
+    city.add(dome);
+    const spire = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 26, 10), inkMat);
+    spire.position.set(6, 227, 10);
+    city.add(spire);
+    // amber sparks, the three dashes above the logo's skyline
+    const sparks = [];
+    [[-22, 262, -26], [8, 276, 0], [40, 262, 26]].forEach(([x, y, rot]) => {
+      const sp = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.4, 20, 10), std({ color: srgb(C.amber), roughness: 0.4 }));
+      sp.position.set(x, y, 10);
+      sp.rotation.z = rot * DEG;
+      city.add(sp); sparks.push(sp);
+    });
+    const CITY_DOWN = -H * 0.95;       // tucked out of sight inside the carton
+    const CITY_UP = H / 2 - 24;        // seated in the mouth, skyline fully clear
+    city.position.y = CITY_DOWN;
+    root.add(city);
+
+    // ---- the boxes that fall off the skyline ----
+    const RAIN = [
+      { meta: SHELF[0].meta, x: -150, z: 40, delay: 0.00, spin: 1.0 },
+      { meta: SHELF[1].meta, x: 140, z: -20, delay: 0.14, spin: -0.8 },
+      { meta: SHELF[2].meta, x: -96, z: -60, delay: 0.28, spin: 0.7 },
+      { meta: SHELF[3].meta, x: 186, z: 60, delay: 0.42, spin: -1.1 },
+      { meta: SAVANNAH, x: -196, z: -34, delay: 0.56, spin: 0.9 },
+    ];
+    const rain = RAIN.map((cfg) => {
+      const b = makeBox(cfg.meta, { w: 58, h: 40, d: 44 });
+      b.visible = false;
+      root.add(b);
+      return { mesh: b, cfg };
+    });
+
+    let prog = null;
+    function render(now, snap) {
+      // Progress has to track the window where the canvas is actually pinned:
+      // from the stage reaching the top of the viewport until its bottom does.
+      // Measuring against the whole section ran the last of the sequence after
+      // the canvas had already unstuck and was scrolling away.
+      const st = stage.getBoundingClientRect();
+      const travel = Math.max(1, st.height - canvas.clientHeight);
+      const raw = clamp(-st.top / travel);
+      const target = reduce ? 0.62 : raw;
+      if (prog === null || snap || reduce) prog = target;
+      else prog += (target - prog) * 0.12;
+      const o = prog, t = now / 1000;
+
+      // 1. the flaps fold back
+      const open = easeOut(smooth(0.06, 0.40, o));
+      flaps.forEach((f) => {
+        const a = open * 116 * DEG * f.userData.sign;
+        if (f.userData.axis === "z") f.rotation.x = -a;
+        else f.rotation.z = a;
+      });
+
+      // 2. the city rises out, overshooting a touch so it reads as a pop
+      const riseT = smooth(0.18, 0.66, o);
+      const pop = easeOut(riseT) * (1 + Math.sin(riseT * Math.PI) * 0.06);
+      city.position.y = lerp(CITY_DOWN, CITY_UP, pop);
+      city.scale.setScalar(lerp(0.82, 1, pop));
+      city.visible = riseT > 0.001;
+      sparks.forEach((sp, i) => {
+        sp.material.opacity = 1;
+        const w = reduce ? 0 : Math.sin(t * 2.2 + i) * 3;
+        sp.position.y = [262, 276, 262][i] + w * pop;
+      });
+
+      // 3. boxes tip off the skyline and fall away
+      rain.forEach(({ mesh, cfg }) => {
+        const f = clamp((o - 0.38 - cfg.delay * 0.22) / 0.46);
+        mesh.visible = f > 0.001 && f < 0.999;
+        if (!mesh.visible) return;
+        const fall = easeIn(f);
+        mesh.position.set(
+          lerp(cfg.x * 0.25, cfg.x, f),
+          lerp(250, -210, fall),
+          cfg.z);
+        mesh.rotation.set(f * 2.4 * cfg.spin, f * 3.1 * cfg.spin, f * 1.2 * cfg.spin);
+        mesh.scale.setScalar(lerp(0.55, 1.05, easeOut(clamp(f * 2.2))));
+      });
+
+      // gentle turn so it never looks frozen
+      root.rotation.y = (reduce ? -18 : -18 + Math.sin(t * 0.35) * 5 + o * 26) * DEG;
+      root.rotation.x = lerp(6, -2, o) * DEG;
+      r.render(scene, cam);
+    }
+
+    function size() {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      if (!w || !h) return;
+      r.setPixelRatio(Math.min(devicePixelRatio, 2));
+      r.setSize(w, h, false);
+      cam.aspect = w / h;
+      cam.fov = w < 700 ? 46 : 34;
+      // dolly back on short viewports so the skyline never leaves the frame
+      cam.position.set(0, 170, h < 620 ? 1080 : 930);
+      cam.lookAt(AIM);
+      cam.updateProjectionMatrix();
+    }
+    addEventListener("resize", size);
+    size();
+    return { render, size, sec };
   }
 
   /* ==========================================================
@@ -668,6 +872,14 @@
   resize();
   root.classList.add("gl-on");
   frame(performance.now(), true);
+  try {
+    openScene = initOpenScene();
+    if (openScene) openScene.render(performance.now(), true);
+  } catch (err) {                       // never let this scene break the drop above it
+    console.error("open scene failed:", err);
+    openScene = null;
+    document.querySelector(".open-zone")?.classList.add("open-failed");
+  }
   requestAnimationFrame(loop);
   (window.requestIdleCallback || ((f) => setTimeout(f, 300)))(renderProducts);
   if (tuneMode) tunePanel();
