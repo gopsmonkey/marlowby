@@ -174,6 +174,78 @@
     search.addEventListener("input", apply);
   }
 
+  /* ---------- Site search ---------- */
+  const sResults = document.getElementById("search-results");
+  if (sResults) {
+    const input = document.getElementById("q");
+    const count = document.getElementById("search-count");
+    const empty = document.getElementById("search-empty");
+    let records = [];
+
+    const terms = (q) => q.toLowerCase().split(/\s+/).filter((t) => t.length > 1);
+    const snippet = (text, ts) => {
+      const low = text.toLowerCase();
+      let at = -1;
+      for (const t of ts) { const i = low.indexOf(t); if (i > -1 && (at < 0 || i < at)) at = i; }
+      const start = at > 70 ? at - 60 : 0;
+      const cut = text.slice(start, start + 230).trim();
+      return (start ? "\u2026" : "") + cut + (start + 230 < text.length ? "\u2026" : "");
+    };
+    const mark = (text, ts) => {
+      let out = escapeHTML(text);
+      for (const t of ts) {
+        out = out.replace(new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"), "<mark>$1</mark>");
+      }
+      return out;
+    };
+    // score: a hit in the heading counts for more than one in the body
+    const run = (q) => {
+      const ts = terms(q);
+      if (!ts.length) { sResults.innerHTML = ""; count.textContent = ""; empty.hidden = true; return; }
+      const hits = [];
+      for (const r of records) {
+        const h = r.h.toLowerCase(), t = r.t.toLowerCase();
+        let score = 0;
+        for (const term of ts) {
+          if (h.includes(term)) score += 6;
+          if (t.includes(term)) score += 1;
+        }
+        if (score) hits.push({ r, score });
+      }
+      hits.sort((a, b) => b.score - a.score);
+      sResults.innerHTML = hits.slice(0, 25).map(({ r }) => `
+        <li><a href="${r.p}">
+          <span class="search-sec">${escapeHTML(r.s)}</span>
+          <h2>${mark(r.h, ts)}</h2>
+          <p>${mark(snippet(r.t, ts), ts)}</p>
+        </a></li>`).join("");
+      count.textContent = hits.length
+        ? `${hits.length} result${hits.length === 1 ? "" : "s"} for \u201c${q}\u201d`
+        : `No results for \u201c${q}\u201d`;
+      empty.hidden = hits.length > 0;
+    };
+
+    const startQ = new URLSearchParams(location.search).get("q") || "";
+    if (startQ) input.value = startQ;
+    fetch("search-index.json")
+      .then((r) => r.json())
+      .then((data) => { records = data; if (input.value.trim()) run(input.value.trim()); })
+      .catch(() => { count.textContent = "Search is unavailable right now. Use the menu to browse."; });
+
+    let t;
+    input.addEventListener("input", () => {
+      clearTimeout(t);
+      t = setTimeout(() => run(input.value.trim()), 120);
+    });
+    // keep the URL shareable without reloading the page
+    document.querySelector(".search-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const q = input.value.trim();
+      history.replaceState(null, "", q ? `?q=${encodeURIComponent(q)}` : "search.html");
+      run(q);
+    });
+  }
+
   /* ---------- Join: multi-step sign-up ---------- */
   const join = document.getElementById("join-form");
   if (join) {

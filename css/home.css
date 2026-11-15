@@ -194,3 +194,33 @@
 @media (max-width: 640px) { .route-arrows { display: none; } }
 .nw { white-space: nowrap; }
 .nw .tip { white-space: normal; }
+
+/* ---------- What's inside this month's box ---------- */
+.inside-head { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: end; margin-bottom: clamp(32px, 4vw, 48px); }
+.inside-head > div { grid-column: 1 / span 7; }
+.inside-head h2 { margin: 14px 0 0; }
+.inside-head .lead { grid-column: 9 / span 4; margin: 0; }
+@media (max-width: 860px) { .inside-head > div, .inside-head .lead { grid-column: 1 / -1; } }
+
+.bx-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
+@media (max-width: 1080px) { .bx-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 620px)  { .bx-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.bx-art {
+  aspect-ratio: 1; border-radius: var(--r-md); background: var(--surface);
+  display: grid; place-items: center; overflow: hidden; margin-bottom: 14px;
+}
+.bx-art svg { width: 78%; height: 78%; transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+.bx-item:nth-child(6n+1) .bx-art { background: var(--g-cream); }
+.bx-item:nth-child(6n+2) .bx-art { background: var(--g-sky); }
+.bx-item:nth-child(6n+3) .bx-art { background: var(--g-amber); }
+.bx-item:nth-child(6n+4) .bx-art { background: var(--g-sky); }
+.bx-item:nth-child(6n+5) .bx-art { background: var(--g-cream); }
+.bx-item:nth-child(6n)   .bx-art { background: var(--g-amber); }
+.bx-item:hover .bx-art svg { transform: translateY(-5px) rotate(-3deg) scale(1.04); }
+
+.bx-cat { font-family: var(--mono); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--blue-ink); margin: 0 0 4px; }
+.bx-name { font-size: 1.05rem; line-height: 1.2; margin: 0 0 3px; min-height: 2.4em; text-wrap: balance; }
+.bx-maker { font-size: .9rem; color: var(--muted); margin: 0; }
+.bx-note { margin: 28px 0 0; }
+@media (prefers-reduced-motion: reduce) { .bx-art svg { transition: none; } }

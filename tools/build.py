@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "24"  # bump to make browsers reload css/js
+VER = "25"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -43,6 +43,9 @@ def header(active):
           <li class="drawer-promo"><a href="join.html"><small>Box No. 01 &middot; ships Jan 1</small><strong>Savannah, Georgia</strong><span class="link">Reserve a box</span></a></li>
         </ul>
         <div class="nav-end">
+          <a class="nav-search" href="search.html" aria-label="Search Marlowby"{CUR if active == "search.html" else ""}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg>
+          </a>
           <a class="btn btn--primary btn--sm" href="join.html"{CUR if active == "join.html" else ""}>Join</a>
           <button class="nav-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Open menu">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path class="t1" d="M4 9h16"/><path class="t2" d="M4 15h16"/></svg>
@@ -78,6 +81,7 @@ FOOTER = f'''  <footer class="site-footer">
         <div>
           <h3>Help</h3>
           <ul>
+            <li><a href="search.html">Search</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="faq.html#contact">Contact</a></li>
             <li><a href="about.html#makers">For makers</a></li>
@@ -93,18 +97,60 @@ FOOTER = f'''  <footer class="site-footer">
     </div>
   </footer>'''
 
-FONTS = "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Nunito:wght@700;800;900&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap"
+# Fonts and libraries are served from this repo, not a CDN. NLC provides no
+# internet on site, and a dropped CDN would take the 3D scenes, every product
+# image and all motion with it.
+FONTS = "vendor/fonts/fonts.css"
 MOTION_JS = '''
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>'''
+  <script src="vendor/js/gsap.min.js"></script>
+  <script src="vendor/js/ScrollTrigger.min.js"></script>
+  <script src="vendor/js/lenis.min.js"></script>'''
 THREE_JS = '''
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+  <script src="vendor/js/three.min.js"></script>
+  <script src="vendor/js/RoundedBoxGeometry.js"></script>
+  <script src="vendor/js/RoomEnvironment.js"></script>
   <script src="js/scene.js?v={VER}"></script>'''
 
-def page(filename, title, desc, body, extra_css="", three=False):
+
+SITE = "https://gopsmonkey.github.io/marlowby/"
+
+def _esc(t):
+    return H.escape(t, quote=True)
+
+def seo_tags(filename, title, desc, jsonld="", robots="index, follow"):
+    """Canonical URL, social cards and structured data for one page."""
+    url = SITE + ("" if filename == "index.html" else filename)
+    img = SITE + "img/social-card.png"
+    block = f"""
+  <link rel="canonical" href="{url}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Marlowby">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="{url}">
+  <meta property="og:title" content="{_esc(title)}">
+  <meta property="og:description" content="{_esc(desc)}">
+  <meta property="og:image" content="{img}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Marlowby logo on a blue sky, with the line: a new U.S. city in a box, every month.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{_esc(title)}">
+  <meta name="twitter:description" content="{_esc(desc)}">
+  <meta name="twitter:image" content="{img}">
+  <meta name="robots" content="{robots}">"""
+    return block + (jsonld or "")
+
+def jsonld(obj):
+    import json
+    return '\n  <script type="application/ld+json">' + json.dumps(obj, separators=(",", ":")) + "</script>"
+
+def crumbs(*pairs):
+    """BreadcrumbList: pass (name, filename) in order, Home first."""
+    return jsonld({"@context": "https://schema.org", "@type": "BreadcrumbList",
+        "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": n,
+            "item": SITE + ("" if fn == "index.html" else fn)} for i, (n, fn) in enumerate(pairs)]})
+
+def page(filename, title, desc, body, extra_css="", three=False, seo="", robots="index, follow"):
     doc = f'''<!DOCTYPE html>
 <html lang="en" class="no-js">
 <head>
@@ -113,10 +159,8 @@ def page(filename, title, desc, body, extra_css="", three=False):
   <title>{title}</title>
   <meta name="description" content="{desc}">
   <meta name="theme-color" content="#14234F">
-  <link rel="icon" href="img/mark.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="{FONTS}" rel="stylesheet">
+  <link rel="icon" href="img/mark.svg" type="image/svg+xml">{seo_tags(filename, title, desc, seo, robots)}
+  <link rel="stylesheet" href="{FONTS}">
   <link rel="stylesheet" href="css/styles.css?v={VER}">{extra_css}
   <link rel="stylesheet" href="css/type.css?v={VER}">
 </head>
@@ -235,6 +279,57 @@ def product(slug, name, tag, price, kicker, meta):
             <p class="meta">{meta}</p>
           </a>'''
 
+
+# ---------------------------------------------------------------- box items
+# Each item in Box No. 01, drawn here as flat SVG in the logo's palette so the
+# site still ships zero stock photography.
+ITEM_SVG = {
+ "praline": """<path d="M34 46h52l-5 44a8 8 0 0 1-8 7H47a8 8 0 0 1-8-7z" fill="#FCEAD6"/>
+   <path d="M30 34h60v12H30z" fill="#F7B731"/>
+   <circle cx="52" cy="66" r="7" fill="#F7B731"/><circle cx="70" cy="78" r="7" fill="#F7B731"/>
+   <circle cx="68" cy="60" r="5" fill="#F7B731"/>""",
+ "candle": """<path d="M38 56h44v38a6 6 0 0 1-6 6H44a6 6 0 0 1-6-6z" fill="#AFCBF3"/>
+   <path d="M38 56h44" /><path d="M60 56V40" />
+   <path d="M60 22c7 7 10 12 10 17a10 10 0 0 1-20 0c0-5 3-10 10-17z" fill="#F7B731"/>""",
+ "sauce": """<path d="M50 30h20v12l8 12v44a6 6 0 0 1-6 6H48a6 6 0 0 1-6-6V54l8-12z" fill="#FCEAD6"/>
+   <path d="M52 20h16v10H52z" fill="#3F6FD1"/>
+   <rect x="46" y="64" width="28" height="24" rx="3" fill="#F7B731"/>""",
+ "grits": """<path d="M36 44h48v52a6 6 0 0 1-6 6H42a6 6 0 0 1-6-6z" fill="#FCEAD6"/>
+   <path d="M36 44l6-16h36l6 16" fill="#E4EDFB"/>
+   <path d="M48 62h24M48 74h24M48 86h16" />""",
+ "coaster": """<circle cx="60" cy="64" r="34" fill="#FDE9BC"/>
+   <circle cx="60" cy="64" r="23" fill="none"/><circle cx="60" cy="64" r="12" fill="#F7B731"/>
+   <path d="M26 64h68M60 30v68" stroke-width="2.2" opacity=".55"/>""",
+ "map": """<path d="M24 38l24-10 24 10 24-10v56l-24 10-24-10-24 10z" fill="#E4EDFB"/>
+   <path d="M48 28v56M72 38v56" />
+   <path d="M78 46c6 0 10 4 10 9 0 7-10 17-10 17S68 62 68 55c0-5 4-9 10-9z" fill="#F7B731"/>""",
+}
+
+BOX_ITEMS = [
+ ("praline", "Benne praline jar", "Tybee Sugarworks", "Sweets"),
+ ("candle", "Saltmarsh candle", "Broughton Candle Co.", "Home"),
+ ("sauce", "Pepper sauce, small batch", "Ogeechee Pepper Co.", "Pantry"),
+ ("grits", "Stone-ground grits", "Red Mill Stoneground", "Pantry"),
+ ("coaster", "Sweetgrass coaster", "Harbor Light Weavers", "Craft"),
+ ("map", "Walking map of the squares", "Drawn for Marlowby", "In every box"),
+]
+
+def box_item(key, name, maker, cat):
+    return f'''          <li class="bx-item">
+            <div class="bx-art">
+              <svg viewBox="0 0 120 120" role="img" aria-label="{H.escape(name)}">
+                <g fill="none" stroke="#14234F" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
+                  {ITEM_SVG[key]}
+                </g>
+              </svg>
+            </div>
+            <p class="bx-cat">{cat}</p>
+            <h3 class="bx-name">{name}</h3>
+            <p class="bx-maker">{maker}</p>
+          </li>'''
+
+BOX_GRID = "\n".join(box_item(*i) for i in BOX_ITEMS)
+
 STYLE = {  # route card: tile color, sticker color, sticker text color
   "sav": ("amber", "#F7B731", "#14234F"), "sf": ("sky", "#AFCBF3", "#14234F"), "det": ("cream", "#3F6FD1", "#ffffff"),
   "pme": ("sky", "#F7B731", "#14234F"), "ash": ("amber", "#14234F", "#ffffff"), "tuc": ("cream", "#F7B731", "#14234F"),
@@ -299,6 +394,22 @@ home = f'''    <div class="gl-zone">
 {product("grandtour", "Grand Tour", "For families", 79, "Large &middot; 10&ndash;12 goods", "Plus a live maker workshop.")}
         </div>
         <a class="btn-mega" href="plans.html" data-rise>Compare all three <span aria-hidden="true">&rarr;</span></a>
+      </div>
+    </section>
+
+    <section class="section boxed" aria-labelledby="inside-title">
+      <div class="container">
+        <div class="inside-head">
+          <div>
+            <span class="pill pill--amber">Box No. 01 &middot; Savannah, Georgia</span>
+            <h2 id="inside-title" data-lines>{lines("What&rsquo;s <em>inside.</em>")}</h2>
+          </div>
+          <p class="lead" data-rise>Six things from six Savannah businesses, plus the field guide and a map. Every maker is paid up front and named on a card in the box.</p>
+        </div>
+        <ul class="bx-grid" data-rise-group>
+{BOX_GRID}
+        </ul>
+        <p class="bx-note note-small">Makers and products shown are illustrative for this concept site. See <a class="link" href="credits.html">credits</a>.</p>
       </div>
     </section>
 
@@ -386,7 +497,19 @@ home = f'''    <div class="gl-zone">
     </section>'''
 page("index.html", "Marlowby | A new U.S. city in a box, every month",
      "Marlowby is a monthly subscription box of local goods, small businesses and experiences from a different U.S. city each month.",
-     home, '\n  <link rel="stylesheet" href="css/home.css?v={VER}">', three=True)
+     home, '\n  <link rel="stylesheet" href="css/home.css?v={VER}">', three=True,
+     seo=jsonld({"@context": "https://schema.org", "@graph": [
+       {"@type": "WebSite", "@id": SITE + "#website", "url": SITE, "name": "Marlowby",
+        "inLanguage": "en-US",
+        "description": "A monthly subscription box of local goods, small businesses and experiences from a different U.S. city each month.",
+        "publisher": {"@id": SITE + "#org"},
+        "potentialAction": {"@type": "SearchAction",
+          "target": {"@type": "EntryPoint", "urlTemplate": SITE + "search.html?q={search_term_string}"},
+          "query-input": "required name=search_term_string"}},
+       {"@type": "Organization", "@id": SITE + "#org", "name": "Marlowby", "url": SITE,
+        "logo": SITE + "img/mark.svg", "image": SITE + "img/social-card.png",
+        "slogan": "Explore your city, one box at a time.",
+        "description": "Marlowby ships a monthly box of local products from a different U.S. city, bought at fair prices from independent businesses."}]}))
 
 # ================================================================== HOW IT WORKS
 hiw = f'''{page_head(("A city, packed", "into a box."), "Here is what happens between a city and your front door, and what you will find when you open the lid.")}
@@ -433,22 +556,30 @@ hiw = f'''{page_head(("A city, packed", "into a box."), "Here is what happens be
 
 {CTA}'''
 page("how-it-works.html", "How It Works | Marlowby",
-     "How Marlowby works: choose a plan, we curate goods from local makers, and your box ships on the 1st of every month.", hiw, three=True)
+     "How Marlowby works: choose a plan, we curate goods from local makers, and your box ships on the 1st of every month.", hiw, three=True,
+     seo=crumbs(("Home", "index.html"), ("How it works", "how-it-works.html")))
 
 # ================================================================== PLANS
-def plan_card(name, price, desc, items, tone, shot_name, featured=False):
+def plan_card(name, price, desc, items, tone, shot_name, goods, featured=False):
     lis = "".join(f"<li>{i}</li>" for i in items)
     flag = '<span class="plan-flag">Most picked</span>' if featured else ""
     btn = "btn--light" if tone == "navy" else "btn--primary"
+    slug = name.replace(" ", "%20")
     return f'''          <article class="tile tile--{tone} plan" id="{shot_name}" data-monthly="{price}">
             {flag}
             <div class="plan-img">{shot(shot_name, "")}</div>
             <h2>The {name}</h2>
             <p class="plan-desc">{desc}</p>
-            <div class="price"><span class="amount">${price}</span><span>/ month</span></div>
+            <div class="plan-stats">
+              <div class="plan-stat"><span class="ps-num">{goods}</span><span class="ps-lab">local goods</span></div>
+              <div class="plan-stat"><span class="ps-num"><span class="amount">${price}</span></span><span class="ps-lab">per month</span></div>
+            </div>
             <p class="price-note" aria-live="polite"></p>
             <ul class="rule-list">{lis}</ul>
-            <a class="btn {btn} btn--block" href="join.html?plan={name.replace(" ", "%20")}">Choose {name}</a>
+            <div class="plan-cta">
+              <a class="btn {btn} btn--block" href="join.html?plan={slug}">Choose {name}</a>
+              <a class="btn btn--outline btn--block" href="join.html?plan={slug}&amp;gift=1">Gift it</a>
+            </div>
           </article>'''
 
 YES = '<td class="yes">Yes</td>'
@@ -462,9 +593,9 @@ plans = f'''{page_head(("Three sizes.", "Same city."), "Every plan has free ship
           <button type="button" data-billing="annual" aria-pressed="false">Yearly <span class="save">save 15%</span></button>
         </div>
         <div class="plans" data-rise-group>
-{plan_card("Postcard", 29, "A small taste of each city. Good for trying us out, or as a gift.", ["4&ndash;5 local goods", "Field guide and map", "Maker cards"], "cream", "postcard")}
-{plan_card("Neighborhood", 49, "Our main box, with room for food, a craft and something to do.", ["7&ndash;9 local goods", "Field guide and map", "At-home experience", "Swaps for allergies and diets"], "navy", "neighborhood", True)}
-{plan_card("Grand Tour", 79, "The whole city, for big households and people who want it all.", ["10&ndash;12 local goods", "Everything in Neighborhood", "Live online maker workshop", "One limited-edition item"], "sky", "grandtour")}
+{plan_card("Postcard", 29, "A small taste of each city. Good for trying us out, or as a gift.", ["Field guide and fold-out map", "Maker cards", "Free shipping"], "cream", "postcard", "4&ndash;5")}
+{plan_card("Neighborhood", 49, "Our main box, with room for food, a craft and something to do.", ["Everything in Postcard", "An at-home experience", "Swaps for allergies and diets"], "navy", "neighborhood", "7&ndash;9", True)}
+{plan_card("Grand Tour", 79, "The whole city, for big households and people who want it all.", ["Everything in Neighborhood", "Live online maker workshop", "One limited-edition item"], "sky", "grandtour", "10&ndash;12")}
         </div>
         <p class="note-small" style="margin-top:28px">Reserve before January 1, 2027 and you keep these prices for as long as you stay subscribed.</p>
       </div>
@@ -539,8 +670,23 @@ plans = f'''{page_head(("Three sizes.", "Same city."), "Every plan has free ship
     </section>
 
 {CTA}'''
+PLAN_LD = jsonld({"@context": "https://schema.org", "@type": "ItemList",
+  "name": "Marlowby subscription plans",
+  "itemListElement": [{"@type": "ListItem", "position": i + 1, "item": {
+      "@type": "Product", "name": f"The {n}", "description": d,
+      "brand": {"@type": "Brand", "name": "Marlowby"},
+      "image": SITE + "img/social-card.png",
+      "offers": {"@type": "Offer", "price": f"{p}.00", "priceCurrency": "USD",
+                 "availability": "https://schema.org/PreOrder",
+                 "url": SITE + "join.html", "category": "Subscription"}}}
+    for i, (n, p, d) in enumerate([
+      ("Postcard", 29, "A small taste of each city. Four to five local goods, the field guide and map."),
+      ("Neighborhood", 49, "Seven to nine local goods, the field guide and map, plus an at-home experience."),
+      ("Grand Tour", 79, "Ten to twelve local goods, everything in Neighborhood, plus a live maker workshop.")])]})
+
 page("plans.html", "Plans & Pricing | Marlowby",
-     "Compare the Marlowby Postcard, Neighborhood and Grand Tour boxes, with monthly, yearly and gift options.", plans, three=True)
+     "Compare the Marlowby Postcard, Neighborhood and Grand Tour boxes, with monthly, yearly and gift options.", plans, three=True,
+     seo=PLAN_LD + crumbs(("Home", "index.html"), ("Plans", "plans.html")))
 
 # ================================================================== CITIES
 ABBR = {"Georgia": "GA", "New Mexico": "NM", "Michigan": "MI", "Maine": "ME", "North Carolina": "NC",
@@ -658,7 +804,8 @@ cities = f'''    <section class="c-hero">
 {CTA}'''
 page("cities.html", "2027 Route & Box Calendar | Marlowby",
      "See Marlowby's 2027 city route on an interactive map, preview each month's box and vote for September's city.", cities,
-     f'\n  <link rel="stylesheet" href="css/pages.css?v={VER}">', three=True)
+     f'\n  <link rel="stylesheet" href="css/pages.css?v={VER}">', three=True,
+     seo=crumbs(("Home", "index.html"), ("Cities", "cities.html")))
 
 # ================================================================== ABOUT
 SPLIT = [("Makers", 22, "#F7B731", "Paid to the shops in the box, before it ships"),
@@ -742,7 +889,8 @@ about = f'''    <section class="a-hero">
     </section>'''
 page("about.html", "About | Marlowby",
      "How Marlowby started, where your money goes, and what we promise makers and members.", about,
-     f'\n  <link rel="stylesheet" href="css/pages.css?v={VER}">', three=True)
+     f'\n  <link rel="stylesheet" href="css/pages.css?v={VER}">', three=True,
+     seo=crumbs(("Home", "index.html"), ("About", "about.html")))
 
 # ================================================================== FAQ
 FAQS = [
@@ -808,8 +956,13 @@ faq = f'''{page_head(("Questions,", "answered."), "Boxes, shipping, your account
         </div>
       </div>
     </section>'''
+FAQ_LD = jsonld({"@context": "https://schema.org", "@type": "FAQPage",
+  "mainEntity": [{"@type": "Question", "name": q,
+                  "acceptedAnswer": {"@type": "Answer", "text": a}} for _, q, a in FAQS]})
+
 page("faq.html", "FAQ & Contact | Marlowby",
-     "Answers about Marlowby boxes, shipping, skipping, canceling and gift subscriptions, plus how to contact us.", faq)
+     "Answers about Marlowby boxes, shipping, skipping, canceling and gift subscriptions, plus how to contact us.", faq,
+     seo=FAQ_LD + crumbs(("Home", "index.html"), ("FAQ", "faq.html")))
 
 # ================================================================== JOIN
 STATES = "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY".split()
@@ -892,7 +1045,36 @@ join = f'''{page_head(("Reserve your", "first box."), "Takes about two minutes. 
       </div>
     </section>'''
 page("join.html", "Reserve a Box | Marlowby",
-     "Reserve your Marlowby subscription box in three short steps.", join)
+     "Reserve your Marlowby subscription box in three short steps.", join,
+     seo=crumbs(("Home", "index.html"), ("Reserve a box", "join.html")))
+
+# ================================================================== SEARCH
+search_body = f'''{page_head(("Search", "Marlowby."), "Find a plan, a city, a maker or an answer. Results come from every page on this site.")}
+
+    <section class="section section--tight">
+      <div class="container" style="max-width:860px">
+        <form class="search-form" role="search" action="search.html" method="get">
+          <label for="q" class="visually-hidden">Search Marlowby</label>
+          <input id="q" name="q" type="search" class="faq-search" autocomplete="off" autofocus
+                 placeholder="Try Savannah, gift, allergies or shipping">
+          <button class="btn btn--primary" type="submit">Search</button>
+        </form>
+        <p class="search-count" id="search-count" role="status" aria-live="polite"></p>
+        <ol class="search-results" id="search-results"></ol>
+        <div class="search-empty" id="search-empty" hidden>
+          <h2>Nothing matched that.</h2>
+          <p class="muted">Try a shorter word, or start from one of these:</p>
+          <ul class="rule-list">
+            <li><a class="link" href="plans.html">Compare the three box sizes</a></li>
+            <li><a class="link" href="cities.html">See the 2027 city route</a></li>
+            <li><a class="link" href="faq.html">Read the FAQ</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>'''
+page("search.html", "Search | Marlowby",
+     "Search every page of the Marlowby site: plans, cities, makers, shipping and gift answers.", search_body,
+     seo=crumbs(("Home", "index.html"), ("Search", "search.html")))
 
 # ================================================================== CREDITS
 credits = f'''{page_head(("Credits and", "sources."), "Every outside resource used to build this site, following the competition&rsquo;s copyright, fair use and AI usage rules.")}
@@ -906,15 +1088,16 @@ credits = f'''{page_head(("Credits and", "sources."), "Every outside resource us
           <li><h3>3D scenes and product images</h3><p>The falling box, the shelf room and the box photos are drawn live in the browser with code written for this project. No stock photos, 3D models or third-party images are used. The U.S. map outline is a simplified shape plotted from public latitude and longitude points.</p></li>
           <li><h3>Design reference</h3><p>The layout style (rounded color blocks, floating menu, a product dropping into a scene on scroll) was inspired by the Bella Kitchenware website. No text, images, code or branding from that site were copied.</p></li>
           <li><h3>Shop layout research</h3><p>General shop patterns (a trust ticker, a shrinking menu bar, product tags on photos, a carousel with a progress bar) were studied on Mobbin screenshots of the Hims, Graza, Oura and Seed websites, and on the Graza, Olipop and Omsom websites. Only general layout ideas were used. No text, images, code or branding from those sites were copied.</p></li>
-          <li><h3>Fonts</h3><p><strong>Nunito</strong> by Vernon Adams, <strong>Figtree</strong> by Erik Kennedy, <strong>Instrument Serif</strong> by Rodrigo Fuenzalida and Jordan Egstad, and <strong>DM Mono</strong> by Colophon Foundry, all under the SIL Open Font License, served by Google Fonts.</p></li>
-          <li><h3>Code libraries</h3><p><strong>three.js</strong> r128 (MIT License) for 3D, <strong>GSAP</strong> 3.12 with ScrollTrigger (GreenSock standard no-charge license) for scroll animation, and <strong>Lenis</strong> 1.1 (MIT License) for smooth scrolling. Everything else is hand-written HTML, CSS and JavaScript.</p></li>
+          <li><h3>Fonts</h3><p><strong>Nunito</strong> by Vernon Adams, <strong>Figtree</strong> by Erik Kennedy, <strong>Instrument Serif</strong> by Rodrigo Fuenzalida and Jordan Egstad, and <strong>DM Mono</strong> by Colophon Foundry, all under the SIL Open Font License. The font files are downloaded from Google Fonts and served from this site, so no outside request is needed to view the page.</p></li>
+          <li><h3>Code libraries</h3><p><strong>three.js</strong> r128 (MIT License) for 3D, <strong>GSAP</strong> 3.12 with ScrollTrigger (GreenSock standard no-charge license) for scroll animation, and <strong>Lenis</strong> 1.1 (MIT License) for smooth scrolling. All three are unmodified library files kept in this repository under <code>vendor/js</code>. Everything else is hand-written HTML, CSS and JavaScript.</p></li>
           <li><h3>Artificial intelligence use</h3><p><em>[Team: complete this section following the event&rsquo;s AI Usage and Citation Policy. List each AI tool, what it was used for, and the dates.]</em></p>
             <p>Example citation: Anthropic. (2026). <em>Claude</em> [Large language model]. Used to help write the HTML, CSS and JavaScript and to draft copy, which the team reviewed and edited. https://claude.ai</p></li>
         </ul>
       </div>
     </section>'''
 page("credits.html", "Credits & Sources | Marlowby",
-     "Credits, sources, licenses and AI usage citation for the Marlowby concept website.", credits)
+     "Credits, sources, licenses and AI usage citation for the Marlowby concept website.", credits,
+     seo=crumbs(("Home", "index.html"), ("Credits", "credits.html")))
 
 # ================================================================== 404
 notfound = f'''{page_head(("That page took", "a wrong turn."), "We could not find that page. It may have moved, or the link may have a typo.")}
@@ -938,7 +1121,53 @@ notfound = f'''{page_head(("That page took", "a wrong turn."), "We could not fin
       </div>
     </section>'''
 page("404.html", "Page not found | Marlowby",
-     "That page could not be found. Here are the main pages of the Marlowby site.", notfound)
+     "That page could not be found. Here are the main pages of the Marlowby site.", notfound,
+     robots="noindex, follow")
+
+# A small search index built from the pages just written, so it can never
+# drift from the copy. Shipped as JSON and queried in the browser.
+import json as _json, re as _re
+_INDEX_PAGES = ["index.html", "how-it-works.html", "plans.html", "cities.html",
+                "about.html", "faq.html", "join.html", "credits.html"]
+_LABEL = {"index.html": "Home", "how-it-works.html": "How it works", "plans.html": "Plans",
+          "cities.html": "Cities", "about.html": "About", "faq.html": "FAQ",
+          "join.html": "Reserve a box", "credits.html": "Credits"}
+_records = []
+for _fn in _INDEX_PAGES:
+    _html = (OUT / _fn).read_text()
+    _main = _re.search(r"<main id=\"main\">(.*?)</main>", _html, _re.S)
+    _body = _main.group(1) if _main else _html
+    _body = _re.sub(r"<(script|style|svg)\b.*?</\1>", " ", _body, flags=_re.S | _re.I)
+    # split on headings so a hit can point at the right part of the page
+    _parts = _re.split(r"<h([23])\b[^>]*>(.*?)</h\1>", _body)
+    _lead, _rest = _parts[0], _parts[1:]
+    def _clean(t):
+        t = _re.sub(r"<[^>]+>", " ", t)
+        return " ".join(H.unescape(t).split())
+    _intro = _clean(_lead)
+    if _intro:
+        _records.append({"p": _fn, "s": _LABEL[_fn], "h": _LABEL[_fn], "t": _intro[:420]})
+    for _i in range(0, len(_rest), 3):
+        _head, _chunk = _clean(_rest[_i + 1]), _clean(_rest[_i + 2] if _i + 2 < len(_rest) else "")
+        if not _head and not _chunk: continue
+        _records.append({"p": _fn, "s": _LABEL[_fn], "h": _head or _LABEL[_fn], "t": _chunk[:420]})
+(OUT / "search-index.json").write_text(_json.dumps(_records, separators=(",", ":")))
+print("search index:", len(_records), "records")
+
+PUBLIC = [("index.html", "1.0"), ("how-it-works.html", "0.8"), ("plans.html", "0.9"),
+          ("cities.html", "0.8"), ("about.html", "0.7"), ("faq.html", "0.7"),
+          ("join.html", "0.9"), ("search.html", "0.5"), ("credits.html", "0.3")]
+_today = __import__("datetime").date.today().isoformat()
+(OUT / "sitemap.xml").write_text(
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    + "".join(f"  <url><loc>{SITE}{'' if fn == 'index.html' else fn}</loc>"
+              f"<lastmod>{_today}</lastmod><priority>{pr}</priority></url>\n"
+              for fn, pr in PUBLIC)
+    + "</urlset>\n")
+(OUT / "robots.txt").write_text(
+    "User-agent: *\nAllow: /\n\n"
+    f"Sitemap: {SITE}sitemap.xml\n")
 
 (OUT / "img" / "favicon.svg").write_text((OUT / "img" / "mark.svg").read_text())
 print("built", sorted(p.name for p in OUT.glob("*.html")))

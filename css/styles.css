@@ -453,3 +453,47 @@ h1 em, h2 em {
 @keyframes burst-spin { from { transform: rotate(12deg); } to { transform: rotate(372deg); } }
 @media (prefers-reduced-motion: reduce) { .burst { animation: none; } }
 @media (max-width: 600px) { .burst { width: 82px; height: 82px; font-size: .8rem; } }
+
+/* ---------- Site search ---------- */
+.nav-search {
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  color: var(--navy); text-decoration: none; transition: background .2s;
+}
+.nav-search:hover { background: var(--sky-soft); }
+.nav-search[aria-current="page"] { background: var(--navy); color: #fff; }
+.nav-search svg { width: 20px; height: 20px; }
+
+.search-form { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.search-form .faq-search { flex: 1 1 260px; }
+.search-count { color: var(--muted); font-size: .95rem; min-height: 1.5em; margin: 0 0 18px; }
+.search-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.search-results a {
+  display: block; background: var(--surface); border-radius: var(--r-md); padding: 20px 24px;
+  text-decoration: none; transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s;
+}
+.search-results a:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(20,35,79,.10); }
+.search-sec {
+  display: inline-block; font-family: var(--mono); font-size: .74rem; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--blue-ink); margin-bottom: 6px;
+}
+.search-results h2 { font-size: 1.25rem; margin: 0 0 6px; }
+.search-results p { margin: 0; color: var(--muted); font-size: .97rem; }
+.search-results mark { background: var(--amber-soft); color: inherit; border-radius: 3px; padding: 0 2px; }
+.search-empty h2 { font-size: 1.6rem; }
+@media (prefers-reduced-motion: reduce) { .search-results a { transition: none; } }
+
+/* ---------- Plan cards: paired stats + twin calls to action ---------- */
+.plan-stats { display: grid; grid-template-columns: 1fr 1fr; align-items: center; margin: 16px 0 2px; }
+.plan-stat { display: flex; flex-direction: column; gap: 3px; }
+.plan-stat + .plan-stat { padding-left: 18px; border-left: 1.5px solid rgba(20, 35, 79, .18); }
+.tile--navy .plan-stat + .plan-stat, .tile--blue .plan-stat + .plan-stat { border-left-color: rgba(255, 255, 255, .28); }
+.ps-num { font-family: var(--display); font-weight: 900; font-size: 2rem; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.ps-num .amount { font-size: inherit; letter-spacing: inherit; }
+.ps-lab { font-size: .84rem; font-weight: 600; color: var(--muted); }
+.tile--navy .ps-lab { color: #c5cfea; }
+.tile--blue .ps-lab { color: #e4edfb; }
+.plan-cta { display: grid; gap: 10px; }
+
+/* the outline button needs to invert on the dark plan tile */
+.tile--navy .btn--outline, .tile--blue .btn--outline { color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .55); }
+.tile--navy .btn--outline:hover, .tile--blue .btn--outline:hover { background: #fff; color: var(--navy); box-shadow: none; }

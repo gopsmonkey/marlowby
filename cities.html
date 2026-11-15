@@ -7,12 +7,27 @@
   <meta name="description" content="See Marlowby's 2027 city route on an interactive map, preview each month's box and vote for September's city.">
   <meta name="theme-color" content="#14234F">
   <link rel="icon" href="img/mark.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Nunito:wght@700;800;900&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=24">
-  <link rel="stylesheet" href="css/pages.css?v=24">
-  <link rel="stylesheet" href="css/type.css?v=24">
+  <link rel="canonical" href="https://gopsmonkey.github.io/marlowby/cities.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Marlowby">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://gopsmonkey.github.io/marlowby/cities.html">
+  <meta property="og:title" content="2027 Route &amp; Box Calendar | Marlowby">
+  <meta property="og:description" content="See Marlowby&#x27;s 2027 city route on an interactive map, preview each month&#x27;s box and vote for September&#x27;s city.">
+  <meta property="og:image" content="https://gopsmonkey.github.io/marlowby/img/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Marlowby logo on a blue sky, with the line: a new U.S. city in a box, every month.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="2027 Route &amp; Box Calendar | Marlowby">
+  <meta name="twitter:description" content="See Marlowby&#x27;s 2027 city route on an interactive map, preview each month&#x27;s box and vote for September&#x27;s city.">
+  <meta name="twitter:image" content="https://gopsmonkey.github.io/marlowby/img/social-card.png">
+  <meta name="robots" content="index, follow">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://gopsmonkey.github.io/marlowby/"},{"@type":"ListItem","position":2,"name":"Cities","item":"https://gopsmonkey.github.io/marlowby/cities.html"}]}</script>
+  <link rel="stylesheet" href="vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="css/styles.css?v=25">
+  <link rel="stylesheet" href="css/pages.css?v=25">
+  <link rel="stylesheet" href="css/type.css?v=25">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -33,6 +48,9 @@
           <li class="drawer-promo"><a href="join.html"><small>Box No. 01 &middot; ships Jan 1</small><strong>Savannah, Georgia</strong><span class="link">Reserve a box</span></a></li>
         </ul>
         <div class="nav-end">
+          <a class="nav-search" href="search.html" aria-label="Search Marlowby">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg>
+          </a>
           <a class="btn btn--primary btn--sm" href="join.html">Join</a>
           <button class="nav-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Open menu">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path class="t1" d="M4 9h16"/><path class="t2" d="M4 15h16"/></svg>
@@ -247,6 +265,7 @@
         <div>
           <h3>Help</h3>
           <ul>
+            <li><a href="search.html">Search</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="faq.html#contact">Contact</a></li>
             <li><a href="about.html#makers">For makers</a></li>
@@ -261,13 +280,13 @@
       </div>
     </div>
   </footer>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
-  <script src="js/main.js?v=24"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
-  <script src="js/scene.js?v=24"></script>
+  <script src="vendor/js/gsap.min.js"></script>
+  <script src="vendor/js/ScrollTrigger.min.js"></script>
+  <script src="vendor/js/lenis.min.js"></script>
+  <script src="js/main.js?v=25"></script>
+  <script src="vendor/js/three.min.js"></script>
+  <script src="vendor/js/RoundedBoxGeometry.js"></script>
+  <script src="vendor/js/RoomEnvironment.js"></script>
+  <script src="js/scene.js?v=25"></script>
 </body>
 </html>

@@ -5,7 +5,7 @@ Concept website for **Marlowby**, a monthly subscription box of local products, 
 **Live site:** https://gopsmonkey.github.io/marlowby/
 
 ## Pages
-`index.html` (home), `how-it-works.html`, `plans.html`, `cities.html`, `about.html`, `faq.html`, `join.html`, `credits.html`
+`index.html` (home), `how-it-works.html`, `plans.html`, `cities.html`, `about.html`, `faq.html`, `join.html`, `search.html`, `credits.html`, `404.html`
 
 ## Run it locally
 It's a static site with no build step needed to view it:
@@ -29,5 +29,18 @@ python3 tools/build.py .
 - `js/scene.js`: three.js scenes (balloon box drop, shelf room, rendered box photos)
 - `js/main.js`: menu, scroll motion, carousel, map, quiz, forms
 - `DESIGN.md`: design rules, motion specs and sources of inspiration
+
+## Everything is served from this repo
+No CDN, no webfont request, nothing fetched from another domain. NLC gives you
+no internet on site, so the fonts (`vendor/fonts`) and the three libraries
+(`vendor/js`: three.js, GSAP with ScrollTrigger, Lenis) ship with the site. Open
+the pages with the network off and the 3D scenes, product images, motion and
+search all still work.
+
+## Generated files
+`tools/build.py` also writes `sitemap.xml`, `robots.txt` and
+`search-index.json`. The search index is built from the finished pages, so the
+site search can never fall out of step with the copy. Do not edit these by
+hand; rebuild instead.
 
 Sources, licenses and the AI usage citation are on `credits.html`.
