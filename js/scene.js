@@ -624,7 +624,9 @@
       const pivot = new THREE.Group();
       pivot.position.set(pos[0], H / 2, pos[1]);
       const panel = new THREE.Mesh(new THREE.RoundedBoxGeometry(w, T, d, 2, 2), wallMat);
-      panel.position.set(axis === "x" ? (sign * w) / 2 : 0, 0, axis === "z" ? (sign * d) / 2 : 0);
+      // the panel reaches INWARD from its hinge, so at rest the four flaps meet
+      // over the opening and the carton reads as closed
+      panel.position.set(axis === "x" ? (-sign * w) / 2 : 0, 0, axis === "z" ? (-sign * d) / 2 : 0);
       pivot.add(panel);
       pivot.userData = { axis, sign };
       carton.add(pivot);
