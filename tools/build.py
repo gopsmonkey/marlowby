@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "44"  # bump to make browsers reload css/js
+VER = "45"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -309,25 +309,27 @@ def product(slug, name, tag, price, kicker, meta):
 # Each item in Box No. 01, drawn here as flat SVG in the logo's palette so the
 # site still ships zero stock photography.
 ITEM_SVG = {
+ # class names hook the animations in home.css ("ani-*"); --k staggers repeats
  "praline": """<path d="M34 46h52l-5 44a8 8 0 0 1-8 7H47a8 8 0 0 1-8-7z" fill="#FCEAD6"/>
-   <path d="M30 34h60v12H30z" fill="#F7B731"/>
-   <circle cx="52" cy="66" r="7" fill="#F7B731"/><circle cx="70" cy="78" r="7" fill="#F7B731"/>
-   <circle cx="68" cy="60" r="5" fill="#F7B731"/>""",
- "candle": """<path d="M38 56h44v38a6 6 0 0 1-6 6H44a6 6 0 0 1-6-6z" fill="#AFCBF3"/>
+   <circle class="ani-drop" style="--k:2" cx="52" cy="66" r="7" fill="#F7B731"/><circle class="ani-drop" style="--k:0" cx="70" cy="78" r="7" fill="#F7B731"/>
+   <circle class="ani-drop" style="--k:1" cx="68" cy="60" r="5" fill="#F7B731"/>
+   <path class="ani-lid" d="M30 34h60v12H30z" fill="#F7B731"/>""",
+ "candle": """<circle class="ani-glow" cx="60" cy="34" r="18" fill="#F7B731" stroke="none" opacity="0"/>
+   <path d="M38 56h44v38a6 6 0 0 1-6 6H44a6 6 0 0 1-6-6z" fill="#AFCBF3"/>
    <path d="M38 56h44" /><path d="M60 56V40" />
-   <path d="M60 22c7 7 10 12 10 17a10 10 0 0 1-20 0c0-5 3-10 10-17z" fill="#F7B731"/>""",
- "sauce": """<path d="M50 30h20v12l8 12v44a6 6 0 0 1-6 6H48a6 6 0 0 1-6-6V54l8-12z" fill="#FCEAD6"/>
+   <path class="ani-flame" d="M60 22c7 7 10 12 10 17a10 10 0 0 1-20 0c0-5 3-10 10-17z" fill="#F7B731"/>""",
+ "sauce": """<g class="ani-shake"><path d="M50 30h20v12l8 12v44a6 6 0 0 1-6 6H48a6 6 0 0 1-6-6V54l8-12z" fill="#FCEAD6"/>
    <path d="M52 20h16v10H52z" fill="#3F6FD1"/>
-   <rect x="46" y="64" width="28" height="24" rx="3" fill="#F7B731"/>""",
+   <rect x="46" y="64" width="28" height="24" rx="3" fill="#F7B731"/></g>""",
  "grits": """<path d="M36 44h48v52a6 6 0 0 1-6 6H42a6 6 0 0 1-6-6z" fill="#FCEAD6"/>
    <path d="M36 44l6-16h36l6 16" fill="#E4EDFB"/>
-   <path d="M48 62h24M48 74h24M48 86h16" />""",
- "coaster": """<circle cx="60" cy="64" r="34" fill="#FDE9BC"/>
-   <circle cx="60" cy="64" r="23" fill="none"/><circle cx="60" cy="64" r="12" fill="#F7B731"/>
-   <path d="M26 64h68M60 30v68" stroke-width="2.2" opacity=".55"/>""",
- "map": """<path d="M24 38l24-10 24 10 24-10v56l-24 10-24-10-24 10z" fill="#E4EDFB"/>
-   <path d="M48 28v56M72 38v56" />
-   <path d="M78 46c6 0 10 4 10 9 0 7-10 17-10 17S68 62 68 55c0-5 4-9 10-9z" fill="#F7B731"/>""",
+   <path class="ani-write" style="--k:0" d="M48 62h24"/><path class="ani-write" style="--k:1" d="M48 74h24"/><path class="ani-write" style="--k:2" d="M48 86h16"/>""",
+ "coaster": """<g class="ani-wind"><circle class="ani-ring" style="--k:2" cx="60" cy="64" r="34" fill="#FDE9BC"/>
+   <circle class="ani-ring" style="--k:1" cx="60" cy="64" r="23" fill="none"/><circle class="ani-ring" style="--k:0" cx="60" cy="64" r="12" fill="#F7B731"/>
+   <path d="M26 64h68M60 30v68" stroke-width="2.2" opacity=".55"/></g>""",
+ "map": """<g class="ani-unfold"><path d="M24 38l24-10 24 10 24-10v56l-24 10-24-10-24 10z" fill="#E4EDFB"/>
+   <path d="M48 28v56M72 38v56" /></g>
+   <path class="ani-pin" d="M78 46c6 0 10 4 10 9 0 7-10 17-10 17S68 62 68 55c0-5 4-9 10-9z" fill="#F7B731"/>""",
 }
 
 BOX_ITEMS = [
@@ -339,8 +341,8 @@ BOX_ITEMS = [
  ("map", "Walking map of the squares", "Drawn for Marlowby", "In every box"),
 ]
 
-def box_item(key, name, maker, cat):
-    return f'''          <li class="bx-item">
+def box_item(i, key, name, maker, cat):
+    return f'''          <li class="bx-item" style="--i:{i}">
             <div class="bx-art">
               <svg viewBox="0 0 120 120" role="img" aria-label="{H.escape(name)}">
                 <g fill="none" stroke="#14234F" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
@@ -353,7 +355,7 @@ def box_item(key, name, maker, cat):
             <p class="bx-maker">{maker}</p>
           </li>'''
 
-BOX_GRID = "\n".join(box_item(*i) for i in BOX_ITEMS)
+BOX_GRID = "\n".join(box_item(n, *it) for n, it in enumerate(BOX_ITEMS))
 
 ABBR = {"Georgia": "GA", "New Mexico": "NM", "Michigan": "MI", "Maine": "ME", "North Carolina": "NC",
         "Arizona": "AZ", "Minnesota": "MN", "Idaho": "ID", "Oregon": "OR", "Kentucky": "KY",

@@ -303,3 +303,59 @@
   .promo { grid-template-areas: "pill art" "title art" "btn btn" "gift gift"; }
   .promo-gift { grid-area: gift; justify-self: center; margin-top: 4px; }
 }
+
+/* ---------- What's inside: each item tells a small story ----------
+   main.js adds .bx-ready (start positions) and then .is-in when the row is on
+   screen. Without JS, or with reduced motion, neither class is added and every
+   item simply shows its finished state. */
+.bx-art svg * { transform-box: fill-box; }
+.ani-lid { transform-origin: 0% 100%; }
+.ani-drop, .ani-pin { transform-origin: 50% 100%; }
+.ani-flame { transform-origin: 50% 100%; }
+.ani-glow { transform-origin: 50% 50%; }
+.ani-shake { transform-origin: 50% 100%; }
+.ani-ring { transform-origin: 50% 50%; }
+.ani-wind { transform-origin: 50% 50%; }
+.ani-unfold { transform-origin: 50% 50%; }
+.ani-write { stroke-dasharray: 26; }
+
+.bx-ready:not(.is-in) .ani-drop,
+.bx-ready:not(.is-in) .ani-pin { opacity: 0; }
+.bx-ready:not(.is-in) .ani-flame,
+.bx-ready:not(.is-in) .ani-ring { transform: scale(0); }
+.bx-ready:not(.is-in) .ani-write { stroke-dashoffset: 26; }
+.bx-ready:not(.is-in) .ani-unfold { transform: scaleX(.12); }
+
+.is-in .bx-item { --t: calc(var(--i, 0) * 140ms + 200ms); }
+.is-in .ani-lid    { animation: bx-lid .9s cubic-bezier(.3, 1.4, .5, 1) var(--t) both; }
+.is-in .ani-drop   { animation: bx-drop .6s cubic-bezier(.3, 1.5, .5, 1) calc(var(--t) + 320ms + var(--k) * 120ms) both; }
+.is-in .ani-flame  { animation: bx-light .5s ease-out var(--t) both, bx-flicker 1.6s ease-in-out calc(var(--t) + .5s) infinite; }
+.is-in .ani-glow   { animation: bx-glow 2.4s ease-in-out calc(var(--t) + .4s) infinite; }
+.is-in .ani-shake  { animation: bx-shake .8s ease-in-out var(--t) both; }
+.is-in .ani-write  { animation: bx-write .45s ease-out calc(var(--t) + var(--k) * 160ms) both; }
+.is-in .ani-ring   { animation: bx-ring .55s cubic-bezier(.3, 1.4, .5, 1) calc(var(--t) + var(--k) * 110ms) both; }
+.is-in .ani-wind   { animation: bx-wind 1.3s cubic-bezier(.2, .8, .2, 1) calc(var(--t) + .2s) both; }
+.is-in .ani-unfold { animation: bx-unfold .8s cubic-bezier(.3, 1.3, .5, 1) var(--t) both; }
+.is-in .ani-pin    { animation: bx-drop .6s cubic-bezier(.3, 1.6, .5, 1) calc(var(--t) + .6s) both; }
+
+/* hover replays the item's story (a different keyframe name restarts it) */
+.is-in .bx-item:hover .ani-lid    { animation: bx-lid-2 .9s cubic-bezier(.3, 1.4, .5, 1) both; }
+.is-in .bx-item:hover .ani-shake  { animation: bx-shake-2 .8s ease-in-out both; }
+.is-in .bx-item:hover .ani-wind   { animation: bx-wind-2 1.1s cubic-bezier(.2, .8, .2, 1) both; }
+.is-in .bx-item:hover .ani-pin    { animation: bx-drop-2 .6s cubic-bezier(.3, 1.6, .5, 1) both; }
+.is-in .bx-item:hover .ani-flame  { animation: bx-flicker .5s ease-in-out infinite; }
+
+@keyframes bx-lid { 0% { transform: none; } 35% { transform: translateY(-12px) rotate(-18deg); } 100% { transform: none; } }
+@keyframes bx-lid-2 { 0% { transform: none; } 35% { transform: translateY(-12px) rotate(-18deg); } 100% { transform: none; } }
+@keyframes bx-drop { 0% { opacity: 0; transform: translateY(-34px); } 100% { opacity: 1; transform: none; } }
+@keyframes bx-drop-2 { 0% { opacity: 0; transform: translateY(-34px); } 100% { opacity: 1; transform: none; } }
+@keyframes bx-light { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes bx-flicker { 0%, 100% { transform: scale(1, 1) skewX(0); } 25% { transform: scale(.9, 1.1) skewX(4deg); } 50% { transform: scale(1.05, .94) skewX(-3deg); } 75% { transform: scale(.95, 1.06) skewX(2deg); } }
+@keyframes bx-glow { 0%, 100% { opacity: .12; transform: scale(.9); } 50% { opacity: .3; transform: scale(1.12); } }
+@keyframes bx-shake { 0%, 100% { transform: none; } 20% { transform: rotate(-9deg); } 40% { transform: rotate(7deg); } 60% { transform: rotate(-4deg); } 80% { transform: rotate(2deg); } }
+@keyframes bx-shake-2 { 0%, 100% { transform: none; } 20% { transform: rotate(-9deg); } 40% { transform: rotate(7deg); } 60% { transform: rotate(-4deg); } 80% { transform: rotate(2deg); } }
+@keyframes bx-write { from { stroke-dashoffset: 26; } to { stroke-dashoffset: 0; } }
+@keyframes bx-ring { from { transform: scale(0); } to { transform: none; } }
+@keyframes bx-wind { from { transform: rotate(-200deg); } to { transform: none; } }
+@keyframes bx-wind-2 { from { transform: rotate(-200deg); } to { transform: none; } }
+@keyframes bx-unfold { from { transform: scaleX(.12); } to { transform: none; } }

@@ -37,6 +37,18 @@
     });
   });
 
+  /* ---------- What's inside: play each item's story once it is on screen ---------- */
+  const bxGrid = document.querySelector(".bx-grid");
+  if (bxGrid && "IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    bxGrid.classList.add("bx-ready");
+    const bxIO = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      bxGrid.classList.add("is-in");
+      bxIO.disconnect();
+    }, { threshold: 0.35 });
+    bxIO.observe(bxGrid);
+  }
+
   /* ---------- Launch countdown (home banner) ---------- */
   const cd = document.getElementById("countdown");
   if (cd) {
