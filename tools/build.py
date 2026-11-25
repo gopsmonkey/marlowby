@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "41"  # bump to make browsers reload css/js
+VER = "42"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -90,14 +90,14 @@ FOOTER = f'''  <footer class="site-footer">
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="faq.html#contact">Contact</a></li>
             <li><a href="about.html#makers">For makers</a></li>
-            <li><a href="credits.html">Credits</a></li>
+            <li><a href="credits.html">Works cited</a></li>
           </ul>
         </div>
       </div>
       <span class="footer-wm" aria-hidden="true">{wm()}</span>
       <div class="footer-bottom">
         <span>&copy; 2026 Marlowby. A concept site made for a student web design competition.</span>
-        <a href="credits.html">Sources &amp; AI use</a>
+        <a href="credits.html">Works cited &amp; AI use</a>
       </div>
     </div>
   </footer>'''
@@ -1144,28 +1144,101 @@ page("search.html", "Search | Marlowby",
      "Search every page of the Marlowby site: plans, cities, makers, shipping and gift answers.", search_body,
      seo=crumbs(("Home", "index.html"), ("Search", "search.html")))
 
-# ================================================================== CREDITS
-credits = f'''{page_head(("Credits and", "sources."), "Every outside resource used to build this site, following the competition&rsquo;s copyright, fair use and AI usage rules.")}
+# ================================================================== WORKS CITED
+# MLA 9, as the BPA Style & Reference Manual requires: alphabetical by first
+# significant word, hanging indent, double spaced, "---" for a repeated author.
+# AI prompts follow the BPA AI Usage & Citation Policy (2026-27, Level 2):
+#   "Prompt description" prompt. Tool, Version, Developer, Date, URL.
+TEAM_NAME = "Marlowby Web Design Team"   # team: replace with your team's name
+TEAM = []   # team: fill in to show a roles table, e.g. [("Page layout", "Jane Doe"), ...]
+CC = "<em>Claude Code</em>, {v} version, Anthropic, {d}, claude.com/claude-code."
+WORKS = [
+  # generative AI, in the BPA policy's format
+  "“Improve the Marlowby site’s UI, accessibility and functionality to better match the competition prompt” prompt. " + CC.format(v="Claude Opus 5", d="7 Nov. 2026"),
+  "“Compare the site with the WSAP rubric, fix validation errors, and add site search, SEO and self-hosted fonts and libraries” prompt. " + CC.format(v="Claude Opus 5", d="14 Nov. 2026"),
+  "“Make the box open and show the month’s city skyline popping out, with boxes falling from the skyline” prompt. " + CC.format(v="Claude Opus 5", d="15 Nov. 2026"),
+  "“Find sites similar to Marlowby, take their best ideas and fix their worst habits where Marlowby has them” prompt. " + CC.format(v="Claude Opus 5.5", d="25 Nov. 2026"),
+  "“Rate the site against the official rubric, fix what is lacking and find ways to exceed it” prompt. " + CC.format(v="Claude Opus 5.5", d="25 Nov. 2026"),
+  # design and market research
+  "<em>Atlas Coffee Club</em>, atlascoffeeclub.com. Accessed 25 Nov. 2026.",
+  "<em>Bella Kitchenware</em>, bellakitchenware.com. Accessed 7 Nov. 2026.",
+  "<em>Bokksu</em>, www.bokksu.com. Accessed 25 Nov. 2026.",
+  "<em>Explore Local Box</em>, www.explorelocalbox.com. Accessed 25 Nov. 2026.",
+  "<em>Graza</em>, www.graza.co. Accessed 7 Nov. 2026.",
+  "“Know the Good and Bad of Subscription Boxes Before Signing Up.” <em>The Penny Hoarder</em>, www.thepennyhoarder.com/save-money/good-and-bad-of-subscription-boxes/. Accessed 25 Nov. 2026.",
+  "<em>Mobbin</em>, mobbin.com. Screenshots of the Hims, Graza, Oura and Seed websites. Accessed 7 Nov. 2026.",
+  "<em>Olipop</em>, drinkolipop.com. Accessed 7 Nov. 2026.",
+  "<em>Omsom</em>, omsom.com. Accessed 7 Nov. 2026.",
+  "“10 Costly Secrets Subscription Box Companies Hide.” <em>Billshark</em>, www.billshark.com/blogs/10-dirty-secrets-subscription-boxes-dont-want-you-to-know. Accessed 25 Nov. 2026.",
+  "<em>Universal Yums</em>, www.universalyums.com. Accessed 14 Nov. 2026.",
+  # typefaces and code libraries
+  "Adams, Vernon, et al. <em>Nunito</em>. SIL Open Font License, Google Fonts, fonts.google.com/specimen/Nunito. Accessed 7 Nov. 2026.",
+  "Colophon Foundry. <em>DM Mono</em>. SIL Open Font License, Google Fonts, fonts.google.com/specimen/DM+Mono. Accessed 7 Nov. 2026.",
+  "Fuenzalida, Rodrigo, and Jordan Egstad. <em>Instrument Serif</em>. SIL Open Font License, Google Fonts, fonts.google.com/specimen/Instrument+Serif. Accessed 7 Nov. 2026.",
+  "GreenSock. <em>GSAP and ScrollTrigger</em>. Version 3.12.5, GreenSock Standard License, gsap.com. Accessed 7 Nov. 2026.",
+  "Kennedy, Erik. <em>Figtree</em>. SIL Open Font License, Google Fonts, fonts.google.com/specimen/Figtree. Accessed 7 Nov. 2026.",
+  "darkroom.engineering. <em>Lenis</em>. Version 1.1.13, MIT License, github.com/darkroomengineering/lenis. Accessed 7 Nov. 2026.",
+  "three.js authors. <em>three.js</em>. Release r128, MIT License, threejs.org. Accessed 7 Nov. 2026.",
+]
+# Self-created work: one author, so every entry after the first uses "---".
+SELF = [
+  "“Box-Opening Scene with the Savannah Skyline.” Self-created 3D animation, coded with three.js, with AI assistance as cited. 15 Nov. 2026.",
+  "“Box Photographs, Shelf Room and Falling-Box Hero.” Self-created 3D graphics, coded with three.js and rendered to WebP files at build time, with AI assistance as cited. 2026.",
+  "“Map of the 2027 Route.” Self-created SVG map plotted from public latitude and longitude points. 2026.",
+  "<em>Marlowby</em>. Self-created website: page layout, written content, navigation and code, with AI assistance as cited. 2026, gopsmonkey.github.io/marlowby.",
+  "“Marlowby Logo.” Self-created digital design, redrawn as SVG. 2026.",
+  "“Social Sharing Card.” Self-created digital image. 25 Nov. 2026.",
+  "“What’s Inside Illustrations.” Self-created SVG illustrations, with AI assistance as cited. 15 Nov. 2026.",
+]
 
-    <section class="section section--tight" aria-labelledby="credits-title">
-      <h2 id="credits-title" class="visually-hidden">Sources and credits</h2>
+import re as _wre
+def _sort_key(entry):
+    t = _wre.sub(r"<[^>]+>", "", entry).lstrip("“\"'")
+    t = _wre.sub(r"^(the|a|an) ", "", t, flags=_wre.I)
+    t = _wre.sub(r"^10\b", "ten", t)          # numbers sort as if spelled out
+    return t.lower()
+
+_self_sorted = sorted(SELF, key=_sort_key)
+_self_html = [f"{TEAM_NAME}. {_self_sorted[0]}"] + [f"---. {e}" for e in _self_sorted[1:]]
+_all = sorted([(TEAM_NAME.lower() + f" {i:02d}", e) for i, e in enumerate(_self_html)]
+              + [(_sort_key(e), e) for e in WORKS])
+works_html = "\n".join(f"          <li>{e}</li>" for _, e in _all)
+roles_html = ("" if not TEAM else
+  '\n\n    <section class="section section--tight" aria-labelledby="roles-title">\n      <div class="container" style="max-width:880px">\n'
+  '        <h2 id="roles-title">Team roles</h2>\n        <dl class="roles">'
+  + "".join(f"<dt>{r}</dt><dd>{n}</dd>" for r, n in TEAM) + "</dl>\n      </div>\n    </section>")
+
+credits = f'''{page_head(("Works", "cited."), "Every source, tool and AI assistant used to make this site, cited in MLA format as the BPA Style &amp; Reference Manual and AI Usage &amp; Citation Policy require.")}
+
+    <section class="section section--tight" aria-labelledby="note-title">
       <div class="container" style="max-width:880px">
-        <ul class="rule-list credits">
-          <li><h3>About this site</h3><p>Marlowby is a fictional company. This site is a concept made for a student web design competition. The test-box quotes, makers, products and vote counts are illustrative, not real people or businesses.</p></li>
-          <li><h3>Logo</h3><p>The Marlowby logo was designed by our team. The SVG version on this site was redrawn from it.</p></li>
-          <li><h3>3D scenes and product images</h3><p>The falling box, the shelf room and the box photos are drawn live in the browser with code written for this project. No stock photos, 3D models or third-party images are used. The U.S. map outline is a simplified shape plotted from public latitude and longitude points.</p></li>
-          <li><h3>Design reference</h3><p>The layout style (rounded color blocks, floating menu, a product dropping into a scene on scroll) was inspired by the Bella Kitchenware website. No text, images, code or branding from that site were copied.</p></li>
-          <li><h3>Shop layout research</h3><p>General shop patterns (a trust ticker, a shrinking menu bar, product tags on photos, a carousel with a progress bar) were studied on Mobbin screenshots of the Hims, Graza, Oura and Seed websites, and on the Graza, Olipop and Omsom websites. Only general layout ideas were used. No text, images, code or branding from those sites were copied.</p></li>
-          <li><h3>Fonts</h3><p><strong>Nunito</strong> by Vernon Adams, <strong>Figtree</strong> by Erik Kennedy, <strong>Instrument Serif</strong> by Rodrigo Fuenzalida and Jordan Egstad, and <strong>DM Mono</strong> by Colophon Foundry, all under the SIL Open Font License. The font files are downloaded from Google Fonts and served from this site, so no outside request is needed to view the page.</p></li>
-          <li><h3>Code libraries</h3><p><strong>three.js</strong> r128 (MIT License) for 3D, <strong>GSAP</strong> 3.12 with ScrollTrigger (GreenSock standard no-charge license) for scroll animation, and <strong>Lenis</strong> 1.1 (MIT License) for smooth scrolling. All three are unmodified library files kept in this repository under <code>vendor/js</code>. Everything else is hand-written HTML, CSS and JavaScript.</p></li>
-          <li><h3>Artificial intelligence use</h3><p><em>[Team: complete this section following the event&rsquo;s AI Usage and Citation Policy. List each AI tool, what it was used for, and the dates.]</em></p>
-            <p>Example citation: Anthropic. (2026). <em>Claude</em> [Large language model]. Used to help write the HTML, CSS and JavaScript and to draft copy, which the team reviewed and edited. https://claude.ai</p></li>
-        </ul>
+        <div class="tile tile--sky">
+          <h2 id="note-title" class="wc-note-h">About this site</h2>
+          <p>Marlowby is a fictional company, and this website was made for the Business Professionals of America (BPA) 365 Website Design and Development Team event, 2026&ndash;2027. The makers, products, test-box quotes and vote counts are illustrative, not real people or businesses. No stock photography or third-party images are used: every picture, map, illustration and 3D scene is drawn by code written for this project. The websites listed were studied for layout and market research only; no text, images, code or branding from them was copied.</p>
+        </div>
       </div>
-    </section>'''
-page("credits.html", "Credits & Sources | Marlowby",
-     "Credits, sources, licenses and AI usage citation for the Marlowby concept website.", credits,
-     seo=crumbs(("Home", "index.html"), ("Credits", "credits.html")))
+    </section>
+
+    <section class="section section--tight" aria-labelledby="wc-title">
+      <div class="container" style="max-width:880px">
+        <h2 id="wc-title">Works Cited</h2>
+        <ol class="works-cited">
+{works_html}
+        </ol>
+      </div>
+    </section>
+
+    <section class="section section--tight" aria-labelledby="ai-title">
+      <div class="container" style="max-width:880px">
+        <div class="tile tile--cream">
+          <h2 id="ai-title" class="wc-note-h">Generative AI use</h2>
+          <p>This event is AI Policy Level 2: generative AI may support the entry, and every use is disclosed and cited. Claude, made by Anthropic, was used through Claude Code to audit the site against the rubric and the Style &amp; Reference Manual; to write and edit HTML, CSS, JavaScript and the Python build script; to code the 3D box-opening scene and the What&rsquo;s Inside illustrations; to research comparable subscription-box websites; and to draft and edit copy. Each AI-assisted change is recorded with its date in the site&rsquo;s public Git history. The same uses are listed on the team&rsquo;s AI Usage &amp; Documentation Form.</p>
+        </div>
+      </div>
+    </section>{roles_html}'''
+page("credits.html", "Works Cited | Marlowby",
+     "Works cited in MLA format for the Marlowby website: research sources, typefaces, code libraries, self-created graphics and generative AI use.", credits,
+     seo=crumbs(("Home", "index.html"), ("Works cited", "credits.html")))
 
 # ================================================================== 404
 notfound = f'''{page_head(("That page took", "a wrong turn."), "We could not find that page. It may have moved, or the link may have a typo.")}
@@ -1199,7 +1272,7 @@ _INDEX_PAGES = ["index.html", "how-it-works.html", "plans.html", "cities.html",
                 "about.html", "faq.html", "join.html", "credits.html"]
 _LABEL = {"index.html": "Home", "how-it-works.html": "How it works", "plans.html": "Plans",
           "cities.html": "Cities", "about.html": "About", "faq.html": "FAQ",
-          "join.html": "Reserve a box", "credits.html": "Credits"}
+          "join.html": "Reserve a box", "credits.html": "Works cited"}
 _records = []
 for _fn in _INDEX_PAGES:
     _html = (OUT / _fn).read_text()

@@ -517,3 +517,11 @@ h1 em, h2 em {
 /* ---------- Gift path in the hero card, team gifting note ---------- */
 .promo-gift { align-self: center; margin-top: 12px; font-size: .95rem; color: #fff; }
 .gift-team { margin: 18px 0 0; }
+
+/* ---------- Works Cited (MLA: hanging indent, double spaced) ---------- */
+.works-cited { list-style: none; margin: 20px 0 0; padding: 0; line-height: 2; }
+.works-cited li { padding-left: 2.2em; text-indent: -2.2em; margin: 0 0 .35em; overflow-wrap: anywhere; }
+.wc-note-h { font-size: 1.5rem; margin-bottom: .5em; }
+.roles { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; margin: 16px 0 0; }
+.roles dt { font-weight: 600; }
+.roles dd { margin: 0; }
