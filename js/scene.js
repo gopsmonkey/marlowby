@@ -583,7 +583,7 @@
     const env = makeEnvironment(r);
     scene.environment = env;
     const cam = new THREE.PerspectiveCamera(34, 1, 10, 4000);
-    const AIM = new THREE.Vector3(0, 128, 0);
+    const AIM = new THREE.Vector3(0, 78, 0);
     cam.position.set(0, 170, 930);
     cam.lookAt(AIM);
 
@@ -656,7 +656,16 @@
 
     const city = new THREE.Group();
     const add = (mesh, x, y, z = 0) => { mesh.position.set(x, y, z); city.add(mesh); return mesh; };
-    const boxOf = (w, h, d, mat) => new THREE.Mesh(new THREE.RoundedBoxGeometry(w, h, d, 2, 1.6), mat);
+    const geoCache = new Map();
+    const boxOf = (w, h, d, mat) => {
+      const key = `${w}|${h}|${d}`;
+      if (!geoCache.has(key)) {
+        geoCache.set(key, Math.min(w, h, d) < 8
+          ? new THREE.BoxGeometry(w, h, d)               // trim, windows, crosses
+          : new THREE.RoundedBoxGeometry(w, h, d, 2, 1.6));
+      }
+      return new THREE.Mesh(geoCache.get(key), mat);
+    };
 
     // Savannah, Box No. 01. Left to right: a live oak, the twin spires of the
     // Cathedral of St John the Baptist, City Hall's gold dome, the rowhouses
@@ -928,13 +937,26 @@
   resize();
   root.classList.add("gl-on");
   frame(performance.now(), true);
-  try {
-    openScene = initOpenScene();
-    if (openScene) openScene.render(performance.now(), true);
-  } catch (err) {                       // never let this scene break the drop above it
-    console.error("open scene failed:", err);
-    openScene = null;
-    document.querySelector(".open-zone")?.classList.add("open-failed");
+  const startOpenScene = () => {
+    try {
+      openScene = initOpenScene();
+      if (openScene) openScene.render(performance.now(), true);
+    } catch (err) {                     // never let this scene break the drop above it
+      console.error("open scene failed:", err);
+      openScene = null;
+      document.querySelector(".open-zone")?.classList.add("open-failed");
+    }
+  };
+  const openZone = document.querySelector(".open-zone");
+  if (openZone && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      startOpenScene();
+    }, { rootMargin: "900px 0px" });   // a screen or so early, so it is ready on arrival
+    io.observe(openZone);
+  } else if (openZone) {
+    startOpenScene();
   }
   requestAnimationFrame(loop);
   (window.requestIdleCallback || ((f) => setTimeout(f, 300)))(renderProducts);

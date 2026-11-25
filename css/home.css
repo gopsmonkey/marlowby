@@ -4,6 +4,9 @@
 
 .gl-zone { position: relative; }
 .gl-canvas { position: absolute; left: 0; top: 0; z-index: 40; pointer-events: none; }
+/* hidden until scene.js has sized and placed it, so placing it is not a layout shift */
+.gl-canvas { visibility: hidden; }
+.gl-on .gl-canvas { visibility: visible; }
 
 /* ---------- Hero ---------- */
 .hero { padding: 4px 0 20px; }

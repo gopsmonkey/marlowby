@@ -25,9 +25,11 @@
   <meta name="robots" content="index, follow">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Marlowby subscription plans","itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Product","name":"The Postcard","description":"A small taste of each city. Four to five local goods, the field guide and map.","brand":{"@type":"Brand","name":"Marlowby"},"image":"https://gopsmonkey.github.io/marlowby/img/social-card.png","offers":{"@type":"Offer","price":"29.00","priceCurrency":"USD","availability":"https://schema.org/PreOrder","url":"https://gopsmonkey.github.io/marlowby/join.html","category":"Subscription"}}},{"@type":"ListItem","position":2,"item":{"@type":"Product","name":"The Neighborhood","description":"Seven to nine local goods, the field guide and map, plus an at-home experience.","brand":{"@type":"Brand","name":"Marlowby"},"image":"https://gopsmonkey.github.io/marlowby/img/social-card.png","offers":{"@type":"Offer","price":"49.00","priceCurrency":"USD","availability":"https://schema.org/PreOrder","url":"https://gopsmonkey.github.io/marlowby/join.html","category":"Subscription"}}},{"@type":"ListItem","position":3,"item":{"@type":"Product","name":"The Grand Tour","description":"Ten to twelve local goods, everything in Neighborhood, plus a live maker workshop.","brand":{"@type":"Brand","name":"Marlowby"},"image":"https://gopsmonkey.github.io/marlowby/img/social-card.png","offers":{"@type":"Offer","price":"79.00","priceCurrency":"USD","availability":"https://schema.org/PreOrder","url":"https://gopsmonkey.github.io/marlowby/join.html","category":"Subscription"}}}]}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://gopsmonkey.github.io/marlowby/"},{"@type":"ListItem","position":2,"name":"Plans","item":"https://gopsmonkey.github.io/marlowby/plans.html"}]}</script>
+  <link rel="preload" href="vendor/fonts/Nunito-latin-11.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="vendor/fonts/Figtree-latin-5.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="vendor/fonts/fonts.css">
-  <link rel="stylesheet" href="css/styles.css?v=36">
-  <link rel="stylesheet" href="css/type.css?v=36">
+  <link rel="stylesheet" href="css/styles.css?v=41">
+  <link rel="stylesheet" href="css/type.css?v=41">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -80,7 +82,7 @@
         <div class="plans" data-rise-group>
           <article class="tile tile--cream plan" id="postcard" data-monthly="29">
             
-            <div class="plan-img"><img data-shot="postcard" src="img/mark.svg" alt="" width="960" height="800"></div>
+            <div class="plan-img"><img src="img/shots/postcard.webp" alt="" width="960" height="800" loading="lazy" decoding="async"></div>
             <h2>The Postcard</h2>
             <p class="plan-desc">A small taste of each city. Good for trying us out, or as a gift.</p>
             <div class="plan-stats">
@@ -96,7 +98,7 @@
           </article>
           <article class="tile tile--navy plan" id="neighborhood" data-monthly="49">
             <span class="plan-flag">Most picked</span>
-            <div class="plan-img"><img data-shot="neighborhood" src="img/mark.svg" alt="" width="960" height="800"></div>
+            <div class="plan-img"><img src="img/shots/neighborhood.webp" alt="" width="960" height="800" loading="lazy" decoding="async"></div>
             <h2>The Neighborhood</h2>
             <p class="plan-desc">Our main box, with room for food, a craft and something to do.</p>
             <div class="plan-stats">
@@ -112,7 +114,7 @@
           </article>
           <article class="tile tile--sky plan" id="grandtour" data-monthly="79">
             
-            <div class="plan-img"><img data-shot="grandtour" src="img/mark.svg" alt="" width="960" height="800"></div>
+            <div class="plan-img"><img src="img/shots/grandtour.webp" alt="" width="960" height="800" loading="lazy" decoding="async"></div>
             <h2>The Grand Tour</h2>
             <p class="plan-desc">The whole city, for big households and people who want it all.</p>
             <div class="plan-stats">
@@ -258,10 +260,6 @@
   <script src="vendor/js/gsap.min.js"></script>
   <script src="vendor/js/ScrollTrigger.min.js"></script>
   <script src="vendor/js/lenis.min.js"></script>
-  <script src="js/main.js?v=36"></script>
-  <script src="vendor/js/three.min.js"></script>
-  <script src="vendor/js/RoundedBoxGeometry.js"></script>
-  <script src="vendor/js/RoomEnvironment.js"></script>
-  <script src="js/scene.js?v=36"></script>
+  <script src="js/main.js?v=41"></script>
 </body>
 </html>

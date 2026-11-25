@@ -172,6 +172,8 @@ a.tile:hover { transform: translateY(-4px); }
 
 /* Parallax frames: image moves inside a clipped frame */
 .frame { overflow: hidden; border-radius: var(--r-lg); }
+/* keep a box photo's own proportions whatever size the frame is */
+.frame img { width: 100%; height: auto; aspect-ratio: 960 / 800; object-fit: contain; }
 
 /* ---------- Pricing ---------- */
 .billing-toggle { display: inline-flex; background: var(--surface); border-radius: 999px; padding: 5px; gap: 4px; }

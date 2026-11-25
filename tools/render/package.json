@@ -1,0 +1,7 @@
+{
+  "name": "marlowby-render",
+  "private": true,
+  "description": "Renders the product photos with the site's own three.js code. See README.",
+  "type": "module",
+  "devDependencies": { "playwright": "^1.50.0" }
+}

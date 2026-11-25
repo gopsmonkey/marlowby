@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "36"  # bump to make browsers reload css/js
+VER = "41"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -111,10 +111,10 @@ MOTION_JS = '''
   <script src="vendor/js/ScrollTrigger.min.js"></script>
   <script src="vendor/js/lenis.min.js"></script>'''
 THREE_JS = '''
-  <script src="vendor/js/three.min.js"></script>
-  <script src="vendor/js/RoundedBoxGeometry.js"></script>
-  <script src="vendor/js/RoomEnvironment.js"></script>
-  <script src="js/scene.js?v={VER}"></script>'''
+  <script defer src="vendor/js/three.min.js"></script>
+  <script defer src="vendor/js/RoundedBoxGeometry.js"></script>
+  <script defer src="vendor/js/RoomEnvironment.js"></script>
+  <script defer src="js/scene.js?v={VER}"></script>'''
 
 
 SITE = "https://gopsmonkey.github.io/marlowby/"
@@ -165,6 +165,8 @@ def page(filename, title, desc, body, extra_css="", three=False, seo="", robots=
   <meta name="description" content="{desc}">
   <meta name="theme-color" content="#14234F">
   <link rel="icon" href="img/mark.svg" type="image/svg+xml">{seo_tags(filename, title, desc, seo, robots)}
+  <link rel="preload" href="vendor/fonts/Nunito-latin-11.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="vendor/fonts/Figtree-latin-5.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{FONTS}">
   <link rel="stylesheet" href="css/styles.css?v={VER}">{extra_css}
   <link rel="stylesheet" href="css/type.css?v={VER}">
@@ -175,7 +177,7 @@ def page(filename, title, desc, body, extra_css="", three=False, seo="", robots=
 {body}
   </main>
 {FOOTER}{MOTION_JS}
-  <script src="js/main.js?v={VER}"></script>{THREE_JS if three else ""}
+  <script src="js/main.js?v={VER}"></script>{THREE_JS if (three and ('class="gl-zone"' in body or 'data-shot=' in body)) else ""}
 </body>
 </html>
 '''
@@ -189,9 +191,22 @@ def page_head(title_lines, lead):
       </div>
     </section>'''
 
+import os as _os
+# Product photos are rendered by our own three.js code. tools/render-shots.sh
+# runs that code once in a headless browser and saves the results to img/shots/,
+# so visitors get ordinary image files: faster, and they still appear on
+# devices without WebGL. Set MARLOWBY_LIVE_SHOTS=1 to emit the live version
+# (which is what the render script reads).
+LIVE_SHOTS = _os.environ.get("MARLOWBY_LIVE_SHOTS") == "1"
+
+def _baked(key):
+    return not LIVE_SHOTS and (OUT / "img" / "shots" / f"{key}.webp").exists()
+
 def shot(name, alt, cls=""):
-    """A rendered product photo (filled in by scene.js); the logo mark shows until it is ready."""
+    """A product photo of one of our boxes. Baked file if present, live render otherwise."""
     c = f' class="{cls}"' if cls else ""
+    if _baked(name):
+        return f'<img{c} src="img/shots/{name}.webp" alt="{alt}" width="960" height="800" loading="lazy" decoding="async">'
     return f'<img{c} data-shot="{name}" src="img/mark.svg" alt="{alt}" width="960" height="800">'
 
 CTA = '''    <section class="section section--tight">
@@ -335,6 +350,8 @@ def box_item(key, name, maker, cat):
 
 BOX_GRID = "\n".join(box_item(*i) for i in BOX_ITEMS)
 
+ABBR = {"Georgia": "GA", "New Mexico": "NM", "Michigan": "MI", "Maine": "ME", "North Carolina": "NC",
+        "Arizona": "AZ", "Minnesota": "MN", "Idaho": "ID"}
 STYLE = {  # route card: tile color, sticker color, sticker text color
   "sav": ("amber", "#F7B731", "#14234F"), "sf": ("sky", "#AFCBF3", "#14234F"), "det": ("cream", "#3F6FD1", "#ffffff"),
   "pme": ("sky", "#F7B731", "#14234F"), "ash": ("amber", "#14234F", "#ffffff"), "tuc": ("cream", "#F7B731", "#14234F"),
@@ -343,12 +360,15 @@ def route_card(i, c):
     k, x, y, city, mo, yr, status, desc = c
     tone, acc, ink = STYLE[k]
     name, state = city.split(", ")
-    abbr = {"Georgia": "GA", "New Mexico": "NM", "Michigan": "MI", "Maine": "ME", "North Carolina": "NC",
-            "Arizona": "AZ", "Minnesota": "MN", "Idaho": "ID"}[state]
+    key = f"city-{i + 1:02d}"
+    img = (f'<img src="img/shots/{key}.webp" alt="The {name} box" width="960" height="800" loading="lazy" decoding="async">'
+           if _baked(key) else
+           f'<img data-shot="city" data-city="{name}" data-state="{ABBR[state]}" data-num="{i + 1:02d}" data-accent="{acc}" '
+           f'data-ink="{ink}" src="img/mark.svg" alt="The {name} box" width="960" height="800" loading="lazy">')
     return f'''          <article class="route-card tile--{tone}">
             <span class="r-pill">{mo} {yr}</span>
             <button class="r-plus" type="button" aria-expanded="false" aria-controls="rc-{k}" aria-label="What is in the {name} box"><span aria-hidden="true"></span></button>
-            <img data-shot="city" data-city="{name}" data-state="{abbr}" data-num="{i + 1:02d}" data-accent="{acc}" data-ink="{ink}" src="img/mark.svg" alt="The {name} box" width="960" height="800" loading="lazy">
+            {img}
             <h3>{name}</h3>
             <div class="r-more" id="rc-{k}"><p class="r-state">{state}</p><p>{desc}</p></div>
           </article>'''
@@ -717,8 +737,6 @@ page("plans.html", "Plans & Pricing | Marlowby",
      seo=PLAN_LD + crumbs(("Home", "index.html"), ("Plans", "plans.html")))
 
 # ================================================================== CITIES
-ABBR = {"Georgia": "GA", "New Mexico": "NM", "Michigan": "MI", "Maine": "ME", "North Carolina": "NC",
-        "Arizona": "AZ", "Minnesota": "MN", "Idaho": "ID"}
 
 def city_items(desc):
     d = desc.rstrip(".")
@@ -733,6 +751,10 @@ def city_shot(i, c, extra=""):
     k, x, y, city, mo, yr, status, desc = c
     tone, acc, ink = STYLE[k]
     name, state = city.split(", ")
+    key = f"city-{i + 1:02d}"
+    if _baked(key):
+        lazy = "" if "loading=" in extra else ' loading="lazy"'
+        return f'<img src="img/shots/{key}.webp" alt="The {name} box" width="960" height="800"{lazy} decoding="async"{extra}>'
     return (f'<img data-shot="city" data-city="{name}" data-state="{ABBR[state]}" data-num="{i + 1:02d}" data-accent="{acc}" '
             f'data-ink="{ink}" src="img/mark.svg" alt="The {name} box" width="960" height="800"{extra}>')
 

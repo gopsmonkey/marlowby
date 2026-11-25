@@ -2,3 +2,5 @@
 __pycache__/
 .claude-flow/
 .playwright-mcp/
+tools/render/node_modules/
+tools/render/package-lock.json
