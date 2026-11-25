@@ -293,3 +293,10 @@
   .open-reveal > span { transition: none; }
   .or-dots i { animation: none; opacity: .6; }
 }
+
+/* Mobile hero card: the gift link gets its own row under the button.
+   Lives here, not styles.css, because home.css sets the areas and loads later. */
+@media (max-width: 900px) {
+  .promo { grid-template-areas: "pill art" "title art" "btn btn" "gift gift"; }
+  .promo-gift { grid-area: gift; justify-self: center; margin-top: 4px; }
+}

@@ -22,6 +22,16 @@
     });
   }
 
+  /* ---------- Ticker pause (hover alone fails keyboard and touch users) ---------- */
+  document.querySelectorAll(".ticker-toggle").forEach((btn) => {
+    const bar = btn.closest(".ticker");
+    btn.addEventListener("click", () => {
+      const paused = bar.classList.toggle("is-paused");
+      btn.setAttribute("aria-pressed", String(paused));
+      btn.setAttribute("aria-label", paused ? "Play the scrolling messages" : "Pause the scrolling messages");
+    });
+  });
+
   /* ---------- Launch countdown (home banner) ---------- */
   const cd = document.getElementById("countdown");
   if (cd) {
@@ -263,6 +273,7 @@
     }
     const gift = params.get("gift");
     if (gift) { const g = join.querySelector("#gift"); if (g) g.checked = true; }
+    // (syncGift runs once the gift box handler is wired, below)
 
     const go = (n) => {
       steps[current].classList.remove("active");
@@ -293,24 +304,78 @@
       return ok;
     };
 
+    // Gifts are paid once. The discounts match the prices on the plans page.
+    const GIFT_RATE = { 3: 1, 6: 162 / 174, 12: 296 / 348 };
+    const AWAY_FEE = 9;                       // per box, Alaska and Hawaii (see FAQ)
+    const money = (n) => "$" + Math.round(n).toLocaleString("en-US");
+
+    // A gift has no frequency or billing cycle, so those choices step aside
+    // (hidden and disabled, so they never reach the summary) and its length shows.
+    const giftBox = join.querySelector("#gift");
+    const syncGift = () => {
+      const on = giftBox.checked;
+      ["f-freq", "f-billing"].forEach((id) => {
+        const fs = document.getElementById(id);
+        fs.hidden = on; fs.disabled = on;
+      });
+      const len = document.getElementById("f-giftlen");
+      len.hidden = !on; len.disabled = !on;
+    };
+    giftBox.addEventListener("change", syncGift);
+    syncGift();
+
+    // Every number a customer will be charged is on this screen, including the
+    // Alaska/Hawaii fee, and the renewal terms are spelled out next to the box
+    // they tick. Hiding either is the most common complaint about subscription boxes.
     const buildSummary = () => {
       const d = new FormData(join);
       const plan = d.get("plan");
-      const billing = d.get("billing");
       const base = PRICES[plan];
-      const monthly = billing === "annual" ? Math.round(base * 0.85) : base;
+      const state = d.get("state");
+      const ship = state === "AK" || state === "HI" ? AWAY_FEE : 0;
       const interests = d.getAll("interests");
-      const box = document.getElementById("summary");
-      box.innerHTML = `
-        <dl>
-          <dt>Plan</dt><dd>The ${plan}</dd>
-          <dt>Billing</dt><dd>${billing === "annual" ? "Annual (15% off)" : "Monthly"}</dd>
-          <dt>Ship to</dt><dd>${escapeHTML(d.get("name"))}, ${escapeHTML(d.get("city"))}, ${escapeHTML(d.get("state"))}</dd>
-          <dt>Interests</dt><dd>${interests.length ? interests.map(escapeHTML).join(", ") : "Surprise me!"}</dd>
-          ${d.get("gift") ? "<dt>Gift</dt><dd>Yes, with a gift note</dd>" : ""}
-        </dl>
-        <div class="summary-total"><span>First box</span><span>$${monthly}${billing === "annual" ? "/mo" : ""}</span></div>
-        <p class="note-small" style="margin:8px 0 0">Free shipping in the contiguous U.S. First box ships the 1st of next month.</p>`;
+      const rows = [
+        ["Plan", `The ${plan}`],
+        ["Ship to", `${escapeHTML(d.get("name"))}, ${escapeHTML(d.get("city"))}, ${escapeHTML(state)}`],
+        ["Shipping", ship ? `${money(ship)} per box (Alaska and Hawaii)` : "Free"],
+        ["Interests", interests.length ? interests.map(escapeHTML).join(", ") : "Surprise me!"],
+      ];
+      let totalLabel, total, renews, terms;
+
+      if (d.get("gift")) {
+        const months = Number(d.get("giftlen"));
+        total = Math.round(base * months * GIFT_RATE[months]) + ship * months;
+        rows.splice(1, 0, ["Gift", `${months} boxes, with a gift note`]);
+        totalLabel = "Paid once";
+        renews = `Charged once, when the first box ships. The gift ends after box ${months} and never renews.`;
+        terms = "I understand this gift is paid once when the first box ships and will not renew.";
+      } else {
+        const every = d.get("freq") === "bimonthly";
+        const cadence = every ? "every other month" : "every month";
+        const boxes = every ? 6 : 12;
+        rows.splice(1, 0, ["Delivery", every ? "Every other month" : "Every month"]);
+        if (d.get("billing") === "annual") {
+          const perBox = Math.round(base * 0.85) + ship;
+          total = perBox * boxes;
+          rows.splice(2, 0, ["Billing", `Yearly, 15% off (${money(perBox)} a box)`]);
+          totalLabel = "Per year";
+          renews = `Charged ${money(total)} for ${boxes} boxes when your first box ships, then once a year until you cancel. Boxes that have not shipped are refunded.`;
+          terms = `I understand my plan renews yearly at ${money(total)} until I cancel, and nothing is charged until my first box ships.`;
+        } else {
+          total = base + ship;
+          rows.splice(2, 0, ["Billing", "Per box"]);
+          totalLabel = "Each box";
+          renews = `Renews ${cadence} at ${money(total)} until you cancel. Cancel online before the 15th to stop the next box.`;
+          terms = `I understand my plan renews ${cadence} at ${money(total)} until I cancel, and nothing is charged until my first box ships.`;
+        }
+      }
+
+      document.getElementById("summary").innerHTML = `
+        <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+        <div class="summary-total"><span>${totalLabel}</span><span>${money(total)}</span></div>
+        <p class="note-small" style="margin:10px 0 0"><strong>Nothing is charged today.</strong> ${renews}</p>
+        <p class="note-small" style="margin:6px 0 0">First-box guarantee: if you don&rsquo;t love your first box, tell us within 30 days and we refund it.</p>`;
+      document.getElementById("terms-label").textContent = terms;
     };
 
     join.addEventListener("click", (e) => {

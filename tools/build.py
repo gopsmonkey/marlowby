@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "35"  # bump to make browsers reload css/js
+VER = "36"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -22,12 +22,17 @@ NAV = [("how-it-works.html", "How it works"), ("plans.html", "Plans"), ("cities.
 CUR = ' aria-current="page"'
 
 TICKER_ITEMS = ["Free shipping in the lower 48", "Box No. 01 ships January 1 from Savannah, GA",
-                "Skip or pause any month", "Every item from an independent local shop", "Gift plans never auto-renew"]
+                "Skip or pause any month", "Every item from an independent local shop", "Gift plans never auto-renew",
+                "Love your first box or your money back"]
 _dot = '<svg viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" d="M25 63S5 41 5 24a20 20 0 0 1 40 0c0 17-20 39-20 39z"/></svg>'
 _run = "".join(f"<span>{_dot}{t}</span>" for t in TICKER_ITEMS)
 TICKER = f'''  <div class="ticker">
     <p class="visually-hidden">{". ".join(TICKER_ITEMS)}.</p>
     <div class="ticker-track" aria-hidden="true"><div>{_run}</div><div>{_run}</div></div>
+    <button class="ticker-toggle" type="button" aria-pressed="false" aria-label="Pause the scrolling messages">
+      <svg class="tt-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3" width="3" height="10" rx="1"/><rect x="9.5" y="3" width="3" height="10" rx="1"/></svg>
+      <svg class="tt-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg>
+    </button>
   </div>'''
 
 def header(active):
@@ -364,6 +369,7 @@ home = f'''    <div class="gl-zone">
             <p class="promo-title">Box No. 01 is Savannah, Georgia.</p>
             <div class="promo-anchor" aria-hidden="true"></div>
             <a class="btn btn--light btn--block" href="join.html">Reserve a box</a>
+            <a class="promo-gift link" href="join.html?gift=1">or send one as a gift</a>
           </aside>
         </div>
       </section>
@@ -616,7 +622,7 @@ plans = f'''{page_head(("Three sizes.", "Same city."), "Every plan has free ship
 {plan_card("Neighborhood", 49, "Our main box, with room for food, a craft and something to do.", ["Everything in Postcard", "An at-home experience", "Swaps for allergies and diets"], "navy", "neighborhood", "7&ndash;9", True)}
 {plan_card("Grand Tour", 79, "The whole city, for big households and people who want it all.", ["Everything in Neighborhood", "Live online maker workshop", "One limited-edition item"], "sky", "grandtour", "10&ndash;12")}
         </div>
-        <p class="note-small" style="margin-top:28px">Reserve before January 1, 2027 and you keep these prices for as long as you stay subscribed.</p>
+        <p class="note-small" style="margin-top:28px">Reserve before January 1, 2027 and you keep these prices for as long as you stay subscribed. Every plan can ship every month or every other month, and if you don&rsquo;t love your first box we refund it.</p>
       </div>
     </section>
 
@@ -680,11 +686,14 @@ plans = f'''{page_head(("Three sizes.", "Same city."), "Every plan has free ship
           <p class="lead" data-rise>Pay once. The first box arrives gift-wrapped with your note inside, and gift plans never renew on their own.</p>
           <a class="btn btn--primary" href="join.html?gift=1" data-rise>Send a gift</a>
         </div>
+        <div>
         <ul class="rule-list gift-list" data-rise-group>
           <li><span><strong>3 months</strong><small>A season of cities</small></span><b>from $87</b></li>
           <li><span><strong>6 months</strong><small>Half a year</small></span><b>from $162</b></li>
           <li><span><strong>12 months</strong><small>All 12 cities, plus a map poster</small></span><b>from $296</b></li>
         </ul>
+        <p class="note-small gift-team">Sending boxes to a whole team or client list? <a class="link" href="faq.html#contact">Ask about group pricing</a>.</p>
+        </div>
       </div>
     </section>
 
@@ -921,6 +930,8 @@ FAQS = [
   ("shipping", "Where do you ship?", "Free to every address in the lower 48 states. Alaska and Hawaii are a flat $9. International shipping is not available yet."),
   ("shipping", "What if something arrives broken?", "Send us a photo within 14 days and we will replace or refund that item."),
   ("account", "How do I skip a month or pause?", "Choose Skip or Pause in your account before the 15th. You can pause for up to three months at a time, and it never costs anything."),
+  ("account", "What if I don't love my first box?", "Tell us within 30 days of it arriving and we refund the whole box. You do not need to send anything back."),
+  ("account", "Can I get a box every other month?", "Yes. Choose every other month when you reserve, or switch any time before the 15th. You get six cities a year instead of twelve, and the price per box is the same."),
   ("account", "Can I cancel anytime?", "Yes. Cancel a monthly plan before the 15th to stop the next box. Yearly plans are refunded for any boxes that have not shipped."),
   ("account", "Can I change my plan?", "Yes. Upgrade or downgrade before the 15th and the change starts with your next box."),
   ("gifts", "How do gift subscriptions work?", "Choose 3, 6 or 12 months and pay once. The first box arrives gift-wrapped with your note. Gift plans never renew on their own."),
@@ -1009,7 +1020,14 @@ join = f'''{page_head(("Reserve your", "first box."), "Takes about two minutes. 
                 </div>
                 <p class="error" id="e-plan">Please choose a plan.</p>
               </fieldset>
-              <fieldset class="field">
+              <fieldset class="field" id="f-freq">
+                <legend>How often</legend>
+                <div class="pill-choices">
+                  <label><input type="radio" name="freq" value="monthly" checked><span>Every month</span></label>
+                  <label><input type="radio" name="freq" value="bimonthly"><span>Every other month</span></label>
+                </div>
+              </fieldset>
+              <fieldset class="field" id="f-billing">
                 <legend>Billing</legend>
                 <div class="pill-choices">
                   <label><input type="radio" name="billing" value="monthly" checked><span>Monthly</span></label>
@@ -1024,6 +1042,15 @@ join = f'''{page_head(("Reserve your", "first box."), "Takes about two minutes. 
                 <input type="checkbox" id="gift" name="gift" value="yes" style="width:auto">
                 <label for="gift" style="margin:0;font-weight:500">This is a gift</label>
               </div>
+              <fieldset class="field" id="f-giftlen" hidden>
+                <legend>Gift length</legend>
+                <div class="pill-choices">
+                  <label><input type="radio" name="giftlen" value="3" checked><span>3 months</span></label>
+                  <label><input type="radio" name="giftlen" value="6"><span>6 months</span></label>
+                  <label><input type="radio" name="giftlen" value="12"><span>12 months</span></label>
+                </div>
+                <p class="note-small" style="margin:8px 0 0">Paid once. A gift ends after its last box and never renews.</p>
+              </fieldset>
               <div class="form-nav"><span></span><button type="button" class="btn btn--primary" data-next>Continue</button></div>
             </div>
 
@@ -1047,7 +1074,7 @@ join = f'''{page_head(("Reserve your", "first box."), "Takes about two minutes. 
               <div class="summary-box" id="summary"></div>
               <div class="field" data-required style="margin-top:20px;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
                 <input type="checkbox" id="terms" name="terms" required aria-describedby="e-terms" style="width:auto;margin-top:5px">
-                <label for="terms" style="font-weight:500;flex:1">I understand reserving is free and I can cancel any time before my first box ships.</label>
+                <label for="terms" id="terms-label" style="font-weight:500;flex:1">I understand my plan renews until I cancel, and nothing is charged until my first box ships.</label>
                 <p class="error" id="e-terms" style="flex-basis:100%">Please tick this box to continue.</p>
               </div>
               <div class="form-nav"><button type="button" class="btn btn--outline" data-prev>Back</button><button type="submit" class="btn btn--primary">Reserve my box</button></div>
