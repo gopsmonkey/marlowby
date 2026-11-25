@@ -160,3 +160,10 @@
 }
 .cal-vote:hover { background: var(--amber); transform: rotate(-8deg); }
 @media (prefers-reduced-motion: reduce) { .cal-vote { transition: none; } }
+
+/* Reflow at 400% zoom (320 px): long item names wrap inside their chip, and the
+   calendar's flexible column may shrink below its longest chip. */
+.chips li { overflow-wrap: anywhere; min-width: 0; }
+.cal-row { grid-template-columns: 110px minmax(0, 1.1fr) minmax(0, 1.6fr) 170px; }
+.cal-row > * { min-width: 0; }
+@media (max-width: 860px) { .cal-row { grid-template-columns: 76px minmax(0, 1fr) 96px; } }

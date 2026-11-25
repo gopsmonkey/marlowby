@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "45"  # bump to make browsers reload css/js
+VER = "47"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -87,6 +87,7 @@ FOOTER = f'''  <footer class="site-footer">
           <h3>Help</h3>
           <ul>
             <li><a href="search.html">Search</a></li>
+            <li><a href="accessibility.html">Accessibility</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="faq.html#contact">Contact</a></li>
             <li><a href="about.html#makers">For makers</a></li>
@@ -1152,6 +1153,7 @@ search_body = f'''{page_head(("Search", "Marlowby."), "Find a plan, a city, a ma
                  placeholder="Try Savannah, gift, allergies or shipping">
           <button class="btn btn--primary" type="submit">Search</button>
         </form>
+        <h2 class="visually-hidden">Results</h2>
         <p class="search-count" id="search-count" role="status" aria-live="polite"></p>
         <ol class="search-results" id="search-results"></ol>
         <div class="search-empty" id="search-empty" hidden>
@@ -1265,6 +1267,40 @@ page("credits.html", "Works Cited | Marlowby",
      "Works cited in MLA format for the Marlowby website: research sources, typefaces, code libraries, self-created graphics and generative AI use.", credits,
      seo=crumbs(("Home", "index.html"), ("Works cited", "credits.html")))
 
+# ================================================================== ACCESSIBILITY
+A11Y = [
+  ("Readable for low vision", "Text meets WCAG 2.2 AA contrast. Every colour pair was measured, including text over the hero sky, where a scrim keeps the headline readable as clouds drift behind it. Pages reflow at 400% zoom without sideways scrolling."),
+  ("Usable without a mouse", "Every link, button, map pin and form control works from the keyboard, with a visible focus ring. A skip link jumps past the menu. Buttons and links are at least 44 by 44 pixels for touch."),
+  ("Clear to screen readers", "Headings follow in order on every page. Images have text alternatives, and the 3D scenes, which are decorative, are hidden from screen readers with a written description in their place. Search results, FAQ filters, votes and form errors are announced as they change."),
+  ("Calm motion", "If your device asks for reduced motion, the scroll effects, the rotating city name and the box animations stay still. The scrolling announcement bar has a pause button."),
+  ("Forms that explain themselves", "Every field has a visible label. Errors appear next to the field and are linked to it, and checkout states every charge and renewal before you agree to it."),
+  ("Works on more devices", "Box photos are ordinary image files, so they appear without WebGL. The site is tested in Chrome and in Safari&rsquo;s WebKit engine, and keeps working offline after your first visit."),
+]
+a11y_items = "\n".join(f'''          <li><h3>{t}</h3><p>{d}</p></li>''' for t, d in A11Y)
+a11y = f'''{page_head(("Built for", "everyone."), "Marlowby aims to meet WCAG 2.2 Level AA, the standard behind the ADA guidance for websites. Here is what that means on this site and how we checked it.")}
+
+    <section class="section section--tight" aria-labelledby="a11y-title">
+      <h2 id="a11y-title" class="visually-hidden">What we did</h2>
+      <div class="container" style="max-width:880px">
+        <ul class="rule-list credits">
+{a11y_items}
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section--tight" aria-labelledby="test-title">
+      <div class="container" style="max-width:880px">
+        <div class="tile tile--sky">
+          <h2 id="test-title" class="wc-note-h">How we checked</h2>
+          <p>Every page passes the W3C HTML validator with no errors and scores 100 for accessibility in Google Lighthouse. We tested keyboard use by hand, measured contrast for each colour pair, and checked the site in Chrome and Safari&rsquo;s WebKit engine, with motion on and off.</p>
+          <p>Automated tools catch only part of the picture. The site has not yet been reviewed by a person who uses a screen reader every day. If anything gets in your way, <a class="link" href="faq.html#contact">tell us</a> and we will fix it.</p>
+        </div>
+      </div>
+    </section>'''
+page("accessibility.html", "Accessibility | Marlowby",
+     "How the Marlowby website meets WCAG 2.2 AA: contrast, keyboard use, screen readers, reduced motion, forms and testing.", a11y,
+     seo=crumbs(("Home", "index.html"), ("Accessibility", "accessibility.html")))
+
 # ================================================================== 404
 notfound = f'''{page_head(("That page took", "a wrong turn."), "We could not find that page. It may have moved, or the link may have a typo.")}
 
@@ -1294,10 +1330,10 @@ page("404.html", "Page not found | Marlowby",
 # drift from the copy. Shipped as JSON and queried in the browser.
 import json as _json, re as _re
 _INDEX_PAGES = ["index.html", "how-it-works.html", "plans.html", "cities.html",
-                "about.html", "faq.html", "join.html", "credits.html"]
+                "about.html", "faq.html", "join.html", "credits.html", "accessibility.html"]
 _LABEL = {"index.html": "Home", "how-it-works.html": "How it works", "plans.html": "Plans",
           "cities.html": "Cities", "about.html": "About", "faq.html": "FAQ",
-          "join.html": "Reserve a box", "credits.html": "Works cited"}
+          "join.html": "Reserve a box", "credits.html": "Works cited", "accessibility.html": "Accessibility"}
 _records = []
 for _fn in _INDEX_PAGES:
     _html = (OUT / _fn).read_text()
@@ -1322,7 +1358,7 @@ print("search index:", len(_records), "records")
 
 PUBLIC = [("index.html", "1.0"), ("how-it-works.html", "0.8"), ("plans.html", "0.9"),
           ("cities.html", "0.8"), ("about.html", "0.7"), ("faq.html", "0.7"),
-          ("join.html", "0.9"), ("search.html", "0.5"), ("credits.html", "0.3")]
+          ("join.html", "0.9"), ("search.html", "0.5"), ("credits.html", "0.3"), ("accessibility.html", "0.3")]
 _today = __import__("datetime").date.today().isoformat()
 (OUT / "sitemap.xml").write_text(
     '<?xml version="1.0" encoding="UTF-8"?>\n'
