@@ -2,6 +2,11 @@
 (function () {
   document.documentElement.classList.remove("no-js");
 
+  // Offline cache (sw.js). Skipped when the files are opened straight from disk.
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+
   /* ---------- Mobile navigation ---------- */
   const toggle = document.querySelector(".nav-toggle");
   const links = document.querySelector(".nav-links");

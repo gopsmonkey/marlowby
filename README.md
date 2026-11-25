@@ -44,3 +44,19 @@ site search can never fall out of step with the copy. Do not edit these by
 hand; rebuild instead.
 
 Sources, licenses and the AI usage citation are on `credits.html`.
+
+## Offline and installable
+`sw.js` (generated from `tools/sw.template.js` by the build) caches all 65 files
+on the first visit. After that the live site keeps working with the network
+off, and it can be added to a home screen like an app (`manifest.webmanifest`).
+The precache list is read from the built pages, and the build stops if a page
+references a file that does not exist.
+
+## Product photos
+The box photos are rendered by the site's own three.js code, once, and saved
+to `img/shots/` as WebP. After changing a box, a plan size or the route:
+
+```bash
+npm --prefix tools/render install   # one time
+sh tools/render-shots.sh
+```

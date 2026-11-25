@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "43"  # bump to make browsers reload css/js
+VER = "44"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -164,7 +164,9 @@ def page(filename, title, desc, body, extra_css="", three=False, seo="", robots=
   <title>{title}</title>
   <meta name="description" content="{desc}">
   <meta name="theme-color" content="#14234F">
-  <link rel="icon" href="img/mark.svg" type="image/svg+xml">{seo_tags(filename, title, desc, seo, robots)}
+  <link rel="icon" href="img/mark.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">{seo_tags(filename, title, desc, seo, robots)}
   <link rel="preload" href="vendor/fonts/Nunito-latin-11.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="vendor/fonts/Figtree-latin-5.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{FONTS}">
@@ -1332,4 +1334,35 @@ _today = __import__("datetime").date.today().isoformat()
     f"Sitemap: {SITE}sitemap.xml\n")
 
 (OUT / "img" / "favicon.svg").write_text((OUT / "img" / "mark.svg").read_text())
+
+# ================================================================== OFFLINE
+# NLC provides no internet. Everything is already self-hosted; this service
+# worker also keeps the site working from its live URL if the connection
+# drops after the first visit, and lets it be installed like an app.
+(OUT / "manifest.webmanifest").write_text(_json.dumps({
+    "name": "Marlowby", "short_name": "Marlowby",
+    "description": "A new U.S. city in a box, every month.",
+    "start_url": "./", "scope": "./", "display": "standalone",
+    "background_color": "#F7F2EA", "theme_color": "#14234F",
+    "icons": [
+        {"src": "img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+        {"src": "img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+        {"src": "img/mark.svg", "sizes": "any", "type": "image/svg+xml"}]}, indent=2))
+
+_assets = set()
+for _p in sorted(OUT.glob("*.html")):
+    _assets.add(_p.name)
+    for _ref in _re.findall(r'(?:src|href)="([^"#:]+)"', _p.read_text()):
+        if not _ref.startswith(("mailto", "tel", "//")) and not _ref.endswith(".html"):
+            _assets.add(_ref)
+_fonts_css = (OUT / "vendor" / "fonts" / "fonts.css").read_text()
+_assets |= {"vendor/fonts/" + u for u in _re.findall(r"url\(([^)]+\.woff2)\)", _fonts_css)}
+_assets |= {"search-index.json", "manifest.webmanifest", "./"}
+_missing = [a for a in _assets if a != "./" and not (OUT / a.split("?")[0]).exists()]
+if _missing:
+    raise SystemExit(f"service worker would precache missing files: {_missing}")
+_sw = (OUT / "tools" / "sw.template.js").read_text()
+(OUT / "sw.js").write_text(_sw.replace("__VERSION__", VER)
+                              .replace("__PRECACHE__", _json.dumps(sorted(_assets), indent=2)))
+print("service worker:", len(_assets), "files precached")
 print("built", sorted(p.name for p in OUT.glob("*.html")))
