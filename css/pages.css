@@ -150,3 +150,13 @@
 .maker-list li::before { content: counter(m); grid-row: span 2; font-family: var(--display); font-weight: 900; font-size: 1.4rem; color: var(--amber); }
 .maker-list strong { color: #fff; font-family: var(--display); font-weight: 800; font-size: 1.2rem; }
 @media (max-width: 860px) { .maker-tile > div, .maker-list { grid-column: 1 / -1; } }
+
+/* ---------- September: the members' vote ---------- */
+.cal-row--vote { background: repeating-linear-gradient(135deg, transparent 0 14px, rgba(247, 183, 49, .08) 14px 28px); }
+.cal-vote {
+  display: grid; place-items: center; width: min(96px, 100%); aspect-ratio: 1; margin-inline: auto;
+  border-radius: 50%; border: 2.5px dashed var(--navy); color: var(--navy); text-decoration: none;
+  font: 900 2.6rem/1 var(--display); transition: background .2s, color .2s, transform .3s;
+}
+.cal-vote:hover { background: var(--amber); transform: rotate(-8deg); }
+@media (prefers-reduced-motion: reduce) { .cal-vote { transition: none; } }

@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "42"  # bump to make browsers reload css/js
+VER = "43"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -233,6 +233,9 @@ CITIES = [  # key, x, y, city, month, year, status, desc
   ("tuc", 226, 330, "Tucson, Arizona", "Jun", "2027", "soon", "Mesquite cookie mix, prickly-pear syrup, a beaded keychain by a local artist and a stargazing guide."),
   ("msp", 499, 100, "Minneapolis, Minnesota", "Jul", "2027", "soon", "Wild rice soup mix, a lake-life enamel pin, cardamom cookies and a Chain of Lakes bike map."),
   ("boi", 144, 125, "Boise, Idaho", "Aug", "2027", "soon", "Huckleberry chocolate, a river-float field guide, locally roasted coffee and a leather bookmark."),
+  ("hdr", 55, 89, "Hood River, Oregon", "Oct", "2027", "soon", "Pear butter from a Columbia Gorge orchard, dried-apple chips, a hand-turned maple spoon and a fruit-loop trail map."),
+  ("lou", 616, 222, "Louisville, Kentucky", "Nov", "2027", "soon", "Modjeska caramels from a candy maker on Frankfort Avenue, a Benedictine spread mix, a stoneware mug and a shotgun-house postcard set."),
+  ("lan", 765, 190, "Lancaster, Pennsylvania", "Dec", "2027", "soon", "Hand-twisted pretzels from a Lititz bakery, apple butter, a quilt-block pot holder and a winter market map."),
 ]
 VOTES = [("nola", 549, 371, "New Orleans, Louisiana", 412), ("kc", 479, 206, "Kansas City, Missouri", 318),
          ("btv", 811, 109, "Burlington, Vermont", 264), ("sat", 418, 381, "San Antonio, Texas", 351)]
@@ -351,19 +354,27 @@ def box_item(key, name, maker, cat):
 BOX_GRID = "\n".join(box_item(*i) for i in BOX_ITEMS)
 
 ABBR = {"Georgia": "GA", "New Mexico": "NM", "Michigan": "MI", "Maine": "ME", "North Carolina": "NC",
-        "Arizona": "AZ", "Minnesota": "MN", "Idaho": "ID"}
+        "Arizona": "AZ", "Minnesota": "MN", "Idaho": "ID", "Oregon": "OR", "Kentucky": "KY",
+        "Pennsylvania": "PA"}
 STYLE = {  # route card: tile color, sticker color, sticker text color
   "sav": ("amber", "#F7B731", "#14234F"), "sf": ("sky", "#AFCBF3", "#14234F"), "det": ("cream", "#3F6FD1", "#ffffff"),
   "pme": ("sky", "#F7B731", "#14234F"), "ash": ("amber", "#14234F", "#ffffff"), "tuc": ("cream", "#F7B731", "#14234F"),
-  "msp": ("sky", "#3F6FD1", "#ffffff"), "boi": ("cream", "#14234F", "#ffffff")}
+  "msp": ("sky", "#3F6FD1", "#ffffff"), "boi": ("cream", "#14234F", "#ffffff"),
+  "hdr": ("amber", "#3F6FD1", "#ffffff"), "lou": ("sky", "#F7B731", "#14234F"), "lan": ("cream", "#AFCBF3", "#14234F")}
+
+# A box's number is its month (Jan = 01), so September's members'-pick box
+# keeps No. 09 even though it has no city yet.
+_MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+def box_no(c):
+    return f"{_MONTHS.index(c[4]) + 1:02d}"
 def route_card(i, c):
     k, x, y, city, mo, yr, status, desc = c
     tone, acc, ink = STYLE[k]
     name, state = city.split(", ")
-    key = f"city-{i + 1:02d}"
+    key = f"city-{box_no(c)}"
     img = (f'<img src="img/shots/{key}.webp" alt="The {name} box" width="960" height="800" loading="lazy" decoding="async">'
            if _baked(key) else
-           f'<img data-shot="city" data-city="{name}" data-state="{ABBR[state]}" data-num="{i + 1:02d}" data-accent="{acc}" '
+           f'<img data-shot="city" data-city="{name}" data-state="{ABBR[state]}" data-num="{box_no(c)}" data-accent="{acc}" '
            f'data-ink="{ink}" src="img/mark.svg" alt="The {name} box" width="960" height="800" loading="lazy">')
     return f'''          <article class="route-card tile--{tone}">
             <span class="r-pill">{mo} {yr}</span>
@@ -751,11 +762,11 @@ def city_shot(i, c, extra=""):
     k, x, y, city, mo, yr, status, desc = c
     tone, acc, ink = STYLE[k]
     name, state = city.split(", ")
-    key = f"city-{i + 1:02d}"
+    key = f"city-{box_no(c)}"
     if _baked(key):
         lazy = "" if "loading=" in extra else ' loading="lazy"'
         return f'<img src="img/shots/{key}.webp" alt="The {name} box" width="960" height="800"{lazy} decoding="async"{extra}>'
-    return (f'<img data-shot="city" data-city="{name}" data-state="{ABBR[state]}" data-num="{i + 1:02d}" data-accent="{acc}" '
+    return (f'<img data-shot="city" data-city="{name}" data-state="{ABBR[state]}" data-num="{box_no(c)}" data-accent="{acc}" '
             f'data-ink="{ink}" src="img/mark.svg" alt="The {name} box" width="960" height="800"{extra}>')
 
 def route_arcs():
@@ -778,10 +789,20 @@ detail_imgs = "".join(city_shot(i, c, f' data-key="{c[0]}"' + ("" if i == 0 else
 
 cal_rows = "\n".join(f'''          <li class="cal-row{" is-now" if c[6] == "now" else ""}">
             <div class="cal-when"><span class="cal-mo">{c[4]}</span><span class="cal-yr">{c[5]}</span></div>
-            <div class="cal-city"><h3>{c[3].split(", ")[0]}</h3><p>{c[3].split(", ")[1]} &middot; Box No. {i + 1:02d}{" &middot; <b>First box</b>" if c[6] == "now" else ""}</p></div>
+            <div class="cal-city"><h3>{c[3].split(", ")[0]}</h3><p>{c[3].split(", ")[1]} &middot; Box No. {box_no(c)}{" &middot; <b>First box</b>" if c[6] == "now" else ""}</p></div>
             {chips(c[7])}
             <div class="cal-img">{city_shot(i, c, ' loading="lazy"')}</div>
           </li>''' for i, c in enumerate(CITIES))
+_vote_row = '''          <li class="cal-row cal-row--vote">
+            <div class="cal-when"><span class="cal-mo">Sep</span><span class="cal-yr">2027</span></div>
+            <div class="cal-city"><h3>Your pick</h3><p>Members&rsquo; vote &middot; Box No. 09</p></div>
+            <ul class="chips"><li>New Orleans</li><li>Kansas City</li><li>Burlington</li><li>San Antonio</li></ul>
+            <div class="cal-img"><a class="cal-vote" href="#vote-title" aria-label="Vote for September&rsquo;s city"><span aria-hidden="true">?</span></a></div>
+          </li>'''
+_rows = cal_rows.split("\n          <li ")
+# insert before October's row so the calendar reads straight through the year
+_oct = next(i for i, r in enumerate(_rows) if '<span class="cal-mo">Oct</span>' in r)
+cal_rows = "\n          <li ".join(_rows[:_oct]) + "\n" + _vote_row + "\n          <li " + "\n          <li ".join(_rows[_oct:])
 
 votes = "\n".join(f'''          <div class="vote-item" data-city="{city}" data-votes="{n}">
             <span><strong>{city}</strong> <span class="pct"></span></span>
@@ -792,7 +813,7 @@ votes = "\n".join(f'''          <div class="vote-item" data-city="{city}" data-v
 cities = f'''    <section class="c-hero">
       <div class="container c-hero-grid">
         <div class="c-hero-copy">
-          <h1 data-lines>{lines("Eight cities.", "Eight boxes.", "One <em>a month.</em>")}</h1>
+          <h1 data-lines>{lines("Twelve cities.", "Twelve boxes.", "One <em>a month.</em>")}</h1>
           <p class="lead" data-rise>This is where Marlowby goes in 2027. Each box is filled by shops from one city and ships on the 1st.</p>
           <div class="c-actions" data-rise><a class="btn btn--primary" href="join.html">Reserve a box</a><a class="link" href="#calendar">See every month</a></div>
         </div>
