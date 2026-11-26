@@ -60,3 +60,11 @@ to `img/shots/` as WebP. After changing a box, a plan size or the route:
 npm --prefix tools/render install   # one time
 sh tools/render-shots.sh
 ```
+
+## City pages and skylines
+`tools/build.py` writes one page per route city (`city-savannah.html` and so on)
+from `CITIES` and `CITY_INFO`: the box, a box-opening scene with that city's
+skyline, the items, the makers and a few facts. Skylines live in
+`js/skylines.js`, one function per city, built from the kit in `js/scene.js`
+(boxes, cylinders, cones, domes, extruded outlines, trees and mountains). The
+facts are real and should stay checkable; the makers are illustrative.

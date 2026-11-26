@@ -130,6 +130,11 @@
       detail.querySelector(".m-yr").textContent = pin.dataset.year;
       detail.querySelector("h3").textContent = pin.dataset.city;
       detail.querySelector("p").textContent = pin.dataset.desc;
+      const more = detail.querySelector(".md-more");
+      if (more && pin.dataset.href) {
+        more.href = pin.dataset.href;
+        more.textContent = `Open the ${pin.dataset.city.split(",")[0]} box`;
+      }
       detail.querySelectorAll("img[data-key]").forEach((img) => { img.hidden = img.dataset.key !== pin.dataset.key; });
     };
     pins.forEach((pin) => {

@@ -18,7 +18,7 @@
   const root = document.documentElement;
   const zone = document.querySelector(".gl-zone");            // home page only
   const shotsWanted = document.querySelector("img[data-shot]"); // product photos (home, plans, how it works)
-  if (!zone && !shotsWanted) return;
+  if (!zone && !shotsWanted && !document.querySelector(".open-zone")) return;
   const zoneCanvas = zone && zone.querySelector(".gl-canvas");
   const sceneCanvas = zone && zone.querySelector(".scene-canvas");
   const anchor = zone && zone.querySelector(".fly-anchor");
@@ -295,8 +295,12 @@
     neighborhood: BOX,
     grandtour: { w: 178, h: 126, d: 132 },
   };
-  if (!zone) {               // pages with product photos but no drop scene
-    (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(renderProducts);
+  // shared material helper; defined before the early exit below because the
+  // box-opening scene on city pages needs it too
+  const std = (opts) => new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.8, metalness: 0 }, opts));
+  if (!zone) {               // city pages and pages with product photos: no drop scene
+    if (shotsWanted) (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(renderProducts);
+    driveOpenScene();
     return;
   }
 
@@ -325,7 +329,6 @@
   roomKey.position.copy(roomKey.target.position).addScaledVector(KEY_DIR, 1600);
   roomScene.add(roomKey, roomKey.target);
 
-  const std = (opts) => new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.8, metalness: 0 }, opts));
 
   // Wall: soft blue plaster
   const wallTex = canvasTexture("wall", 1400, 800, (g, w, h) => {
@@ -552,18 +555,45 @@
     }
   }
 
-  let openScene = null;
   function loop(now) {
     const r = zone.getBoundingClientRect();
     if (r.bottom > -100 && r.top < innerHeight + 100) frame(now, false);
-    if (openScene) {
-      const o = openScene.sec.getBoundingClientRect();
-      if (o.bottom > -200 && o.top < innerHeight + 200) {
-        try { openScene.render(now, false); }
-        catch (err) { console.error("open scene frame failed:", err); openScene = null; }
-      }
-    }
     requestAnimationFrame(loop);
+  }
+
+  // The box-opening scene runs on its own: built only as it nears the viewport,
+  // with its own frame loop, so it works on pages without the home hero and a
+  // failure in it can never stop the falling box.
+  function driveOpenScene() {
+    const openZone = document.querySelector(".open-zone");
+    if (!openZone) return;
+    let os = null;
+    const tick = (now) => {
+      if (!os) return;
+      const o = os.sec.getBoundingClientRect();
+      if (o.bottom > -200 && o.top < innerHeight + 200) {
+        try { os.render(now, false); }
+        catch (err) { console.error("open scene frame failed:", err); os = null; return; }
+      }
+      requestAnimationFrame(tick);
+    };
+    const start = () => {
+      try {
+        os = initOpenScene();
+        if (os) { os.render(performance.now(), true); requestAnimationFrame(tick); }
+      } catch (err) {
+        console.error("open scene failed:", err);
+        os = null;
+        openZone.classList.add("open-failed");
+      }
+    };
+    if (!("IntersectionObserver" in window)) return start();
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      start();
+    }, { rootMargin: "900px 0px" });      // a screen or so early, so it is ready on arrival
+    io.observe(openZone);
   }
 
   /* ==========================================================
@@ -576,6 +606,12 @@
     const canvas = sec && sec.querySelector(".open-canvas");
     const stage = sec && sec.querySelector(".open-stage");
     if (!canvas || !stage) return null;
+    // The page says which city's box this is (data-city etc. on .open-zone), so
+    // the same scene serves the home page and every city page.
+    const ds = sec.dataset;
+    const META = ds.num ? { city: ds.name, state: ds.state, num: ds.num, accent: ds.accent, ink: ds.ink } : SAVANNAH;
+    const SKYLINE = (window.MarlowbySkylines || {})[ds.city || "sav"];
+    if (!SKYLINE) throw new Error("no skyline for " + (ds.city || "sav"));
 
     const r = makeRenderer(canvas);
     r.localClippingEnabled = true;
@@ -615,7 +651,7 @@
     // front wall gets the wordmark so the carton still reads as a Marlowby box
     const face = new THREE.Mesh(
       new THREE.PlaneGeometry(W * 0.92, H * 0.78),
-      new THREE.MeshStandardMaterial({ map: frontTex(SAVANNAH, { w: W, h: H, d: D }), roughness: 0.85, transparent: true }));
+      new THREE.MeshStandardMaterial({ map: frontTex(META, { w: W, h: H, d: D }), roughness: 0.85, transparent: true }));
     face.position.set(0, -4, D / 2 + T / 2 + 0.6);
     carton.add(face);
 
@@ -647,79 +683,76 @@
     const cityMat = (hex, rough = 0.82) =>
       std({ color: srgb(hex), roughness: rough, envMapIntensity: 0.9, clippingPlanes: [rimClip] });
 
-    const STONE = cityMat("#E7EEFA", 0.86);   // pale limestone, the historic district
-    const BRICK = cityMat("#9FB8E4");         // mid blue, the low rowhouses
-    const DEEP = cityMat("#5C84D6");          // the taller massing
-    const GOLD = cityMat("#F7B731", 0.42);    // City Hall's gilded dome
-    const INK = cityMat("#14234F", 0.7);      // windows, crosses, cables
-    const LEAF = cityMat("#7FA8C9", 0.9);     // live oaks, kept in the blue family
-
+    const matCache = new Map();
+    const mat = (hex, rough = 0.82) => {
+      const k = hex + rough;
+      if (!matCache.has(k)) matCache.set(k, cityMat(hex, rough));
+      return matCache.get(k);
+    };
     const city = new THREE.Group();
-    const add = (mesh, x, y, z = 0) => { mesh.position.set(x, y, z); city.add(mesh); return mesh; };
     const geoCache = new Map();
-    const boxOf = (w, h, d, mat) => {
-      const key = `${w}|${h}|${d}`;
-      if (!geoCache.has(key)) {
-        geoCache.set(key, Math.min(w, h, d) < 8
-          ? new THREE.BoxGeometry(w, h, d)               // trim, windows, crosses
-          : new THREE.RoundedBoxGeometry(w, h, d, 2, 1.6));
-      }
-      return new THREE.Mesh(geoCache.get(key), mat);
+    const geo = (key, make) => { if (!geoCache.has(key)) geoCache.set(key, make()); return geoCache.get(key); };
+
+    // The kit every skyline in js/skylines.js is built from. Everything is clipped
+    // at the carton rim, so a skyline is only ever seen rising out of the box.
+    const K = {
+      THREE, DEG,
+      mat,
+      M: {
+        STONE: mat("#E7EEFA", 0.86), WHITE: mat("#F6F8FC", 0.8), BRICK: mat("#9FB8E4"), DEEP: mat("#5C84D6"),
+        GLASS: mat("#4A6FC4", 0.35), NAVY: mat("#2B4080", 0.6), GOLD: mat("#F7B731", 0.42), INK: mat("#14234F", 0.7),
+        LEAF: mat("#7FA8C9", 0.9), TRUNK: mat("#6E86B8", 0.9), SKY: mat("#AFCBF3", 0.9), SNOW: mat("#FFFFFF", 0.7),
+        ADOBE: mat("#E6C29C", 0.95), CLAY: mat("#D49A72", 0.95), BARN: mat("#C2614E", 0.85), ROCK: mat("#B8C3D9", 0.95),
+      },
+      add(mesh, x, y, z = 0) { mesh.position.set(x, y, z); city.add(mesh); return mesh; },
+      // w/h/d box; trim under 8 units is a plain box, anything bigger gets soft edges
+      box(w, h, d, m) {
+        return new THREE.Mesh(geo(`b${w}|${h}|${d}`, () => Math.min(w, h, d) < 8
+          ? new THREE.BoxGeometry(w, h, d) : new THREE.RoundedBoxGeometry(w, h, d, 2, 1.6)), m);
+      },
+      cyl(rt, rb, h, m, seg = 24) {
+        return new THREE.Mesh(geo(`c${rt}|${rb}|${h}|${seg}`, () => new THREE.CylinderGeometry(rt, rb, h, seg)), m);
+      },
+      cone(r, h, m, seg = 4) { return new THREE.Mesh(geo(`k${r}|${h}|${seg}`, () => new THREE.ConeGeometry(r, h, seg)), m); },
+      sphere(r, m, seg = 20) { return new THREE.Mesh(geo(`s${r}|${seg}`, () => new THREE.SphereGeometry(r, seg, Math.round(seg * 0.7))), m); },
+      dome(r, m) {
+        return new THREE.Mesh(geo(`d${r}`, () => new THREE.SphereGeometry(r, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2)), m);
+      },
+      // an extruded outline (x/y pairs, y up from 0), centred on its depth
+      prism(pts, depth, m) {
+        return new THREE.Mesh(geo(`p${pts.join()}|${depth}`, () => {
+          const sh = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)));
+          const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false });
+          g.translate(0, 0, -depth / 2);
+          return g;
+        }), m);
+      },
+      windows(x, w, h, z, { from = 14, step = 22, m = null } = {}) {
+        for (let y = from; y < h - 8; y += step) K.add(K.box(Math.max(4, w * 0.5), 6, 1.6, m || K.M.INK), x, y, z);
+      },
+    };
+    // a few pieces several cities share
+    K.tree = (x, s = 1, z = 6) => {
+      K.add(K.box(8 * s, 40 * s, 8 * s, K.M.TRUNK), x, 20 * s, z);
+      K.add(K.sphere(Math.round(22 * s), K.M.LEAF), x, 52 * s, z).scale.y = 0.85;
+    };
+    K.pine = (x, s = 1, z = 0) => {
+      K.add(K.box(6 * s, 18 * s, 6 * s, K.M.TRUNK), x, 9 * s, z);
+      K.add(K.cone(Math.round(17 * s), Math.round(58 * s), K.M.LEAF, 7), x, 46 * s, z);
+    };
+    K.mountain = (x, w, h, z, m, seg = 5, snow = 0) => {
+      const mt = K.add(K.cone(Math.round(w / 2), h, m, seg), x, h / 2, z);
+      mt.rotation.y = 0.3;
+      if (snow) K.add(K.cone(Math.round((w / 2) * snow), Math.round(h * snow), K.M.SNOW, seg), x, h - (h * snow) / 2 + 0.5, z).rotation.y = 0.3;
+      return mt;
+    };
+    K.gable = (x, w, h, d, wall, roof, z = 0, pitch = 0.55) => {
+      K.add(K.box(w, h, d, wall), x, h / 2, z);
+      const r = (w / 2) * pitch * 2;
+      K.add(K.prism([[-w / 2 - 2, 0], [w / 2 + 2, 0], [0, r]], d + 4, roof), x, h, z);
     };
 
-    // Savannah, Box No. 01. Left to right: a live oak, the twin spires of the
-    // Cathedral of St John the Baptist, City Hall's gold dome, the rowhouses
-    // along the squares, and a pylon of the Talmadge Memorial Bridge.
-    function liveOak(x, scale = 1) {
-      const trunk = boxOf(10 * scale, 86 * scale, 10 * scale, cityMat("#6E86B8", 0.9));
-      add(trunk, x, 43 * scale, 6);
-      // a broad low crown, the way the oaks on the squares actually spread
-      [[0, 104, 34], [-26, 94, 26], [27, 96, 27], [3, 122, 23]].forEach(([dx, dy, r]) => {
-        const c = new THREE.Mesh(new THREE.SphereGeometry(r * scale, 20, 14), LEAF);
-        c.scale.y = 0.66;
-        add(c, x + dx * scale, dy * scale, 6);
-      });
-    }
-
-    function cathedral(x) {
-      add(boxOf(54, 82, 40, STONE), x, 41, 0);                 // nave
-      [-17, 17].forEach((dx) => {
-        add(boxOf(19, 150, 19, STONE), x + dx, 75, 2);          // tower
-        const spire = new THREE.Mesh(new THREE.ConeGeometry(13, 54, 4), DEEP);
-        spire.rotation.y = Math.PI / 4;
-        add(spire, x + dx, 177, 2);
-        add(boxOf(2.6, 15, 2.6, INK), x + dx, 211, 2);          // cross
-        add(boxOf(9, 2.6, 2.6, INK), x + dx, 207, 2);
-      });
-      add(boxOf(16, 18, 2, INK), x, 62, 20.5);                  // rose window
-    }
-
-    function cityHall(x) {
-      add(boxOf(58, 62, 46, STONE), x, 31, 0);
-      add(boxOf(40, 20, 40, STONE), x, 72, 0);                  // drum base
-      const drum = new THREE.Mesh(new THREE.CylinderGeometry(19, 19, 26, 24), STONE);
-      add(drum, x, 95, 0);
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(19, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2), GOLD);
-      add(dome, x, 108, 0);
-      add(boxOf(3, 20, 3, GOLD), x, 128, 0);                    // finial
-    }
-
-    function rowhouses(x0) {
-      [[0, 30, 56], [32, 26, 48], [60, 30, 64], [92, 24, 44]].forEach(([dx, w, h], i) => {
-        add(boxOf(w, h, 34, i % 2 ? BRICK : DEEP), x0 + dx, h / 2, -4);
-        for (let row = 0; row < Math.floor(h / 22); row++) {    // windows
-          add(boxOf(w * 0.5, 6, 1.6, INK), x0 + dx, 14 + row * 22, 13.2);
-        }
-      });
-    }
-
-    // Kept inside the carton footprint (half-width 115) so nothing floats
-    // beside the box once the clip plane reveals it.
-    liveOak(-96, 0.80);
-    cathedral(-48);
-    cityHall(10);
-    rowhouses(48);
-    liveOak(100, 0.66);
+    SKYLINE(K);
 
     // the three amber sparks from the logo, above the rooftops
     const sparks = [];
@@ -738,13 +771,13 @@
     root.add(city);
 
     // ---- the boxes that fall off the skyline ----
+    let rainMeta = [SHELF[0].meta, SHELF[1].meta, SHELF[2].meta, SHELF[3].meta, SAVANNAH];
+    try { if (ds.rain) rainMeta = JSON.parse(ds.rain); } catch (e) { /* keep the default */ }
     const RAIN = [
-      { meta: SHELF[0].meta, x: -150, z: 40, delay: 0.00, spin: 1.0 },
-      { meta: SHELF[1].meta, x: 140, z: -20, delay: 0.14, spin: -0.8 },
-      { meta: SHELF[2].meta, x: -96, z: -60, delay: 0.28, spin: 0.7 },
-      { meta: SHELF[3].meta, x: 186, z: 60, delay: 0.42, spin: -1.1 },
-      { meta: SAVANNAH, x: -196, z: -34, delay: 0.56, spin: 0.9 },
-    ];
+      { x: -150, z: 40, delay: 0.00, spin: 1.0 }, { x: 140, z: -20, delay: 0.14, spin: -0.8 },
+      { x: -96, z: -60, delay: 0.28, spin: 0.7 }, { x: 186, z: 60, delay: 0.42, spin: -1.1 },
+      { x: -196, z: -34, delay: 0.56, spin: 0.9 },
+    ].map((c, i) => ({ ...c, meta: rainMeta[i % rainMeta.length] }));
     const rain = RAIN.map((cfg) => {
       const b = makeBox(cfg.meta, { w: 58, h: 40, d: 44 });
       b.visible = false;
@@ -937,27 +970,7 @@
   resize();
   root.classList.add("gl-on");
   frame(performance.now(), true);
-  const startOpenScene = () => {
-    try {
-      openScene = initOpenScene();
-      if (openScene) openScene.render(performance.now(), true);
-    } catch (err) {                     // never let this scene break the drop above it
-      console.error("open scene failed:", err);
-      openScene = null;
-      document.querySelector(".open-zone")?.classList.add("open-failed");
-    }
-  };
-  const openZone = document.querySelector(".open-zone");
-  if (openZone && "IntersectionObserver" in window) {
-    const io = new IntersectionObserver((entries) => {
-      if (!entries.some((e) => e.isIntersecting)) return;
-      io.disconnect();
-      startOpenScene();
-    }, { rootMargin: "900px 0px" });   // a screen or so early, so it is ready on arrival
-    io.observe(openZone);
-  } else if (openZone) {
-    startOpenScene();
-  }
+  driveOpenScene();
   requestAnimationFrame(loop);
   (window.requestIdleCallback || ((f) => setTimeout(f, 300)))(renderProducts);
   if (tuneMode) tunePanel();

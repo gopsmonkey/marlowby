@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "47"  # bump to make browsers reload css/js
+VER = "55"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -115,6 +115,7 @@ THREE_JS = '''
   <script defer src="vendor/js/three.min.js"></script>
   <script defer src="vendor/js/RoundedBoxGeometry.js"></script>
   <script defer src="vendor/js/RoomEnvironment.js"></script>
+  <script defer src="js/skylines.js?v={VER}"></script>
   <script defer src="js/scene.js?v={VER}"></script>'''
 
 
@@ -170,6 +171,7 @@ def page(filename, title, desc, body, extra_css="", three=False, seo="", robots=
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">{seo_tags(filename, title, desc, seo, robots)}
   <link rel="preload" href="vendor/fonts/Nunito-latin-11.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="vendor/fonts/Figtree-latin-5.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="vendor/fonts/InstrumentSerifi-latin-7.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{FONTS}">
   <link rel="stylesheet" href="css/styles.css?v={VER}">{extra_css}
   <link rel="stylesheet" href="css/type.css?v={VER}">
@@ -180,7 +182,7 @@ def page(filename, title, desc, body, extra_css="", three=False, seo="", robots=
 {body}
   </main>
 {FOOTER}{MOTION_JS}
-  <script src="js/main.js?v={VER}"></script>{THREE_JS if (three and ('class="gl-zone"' in body or 'data-shot=' in body)) else ""}
+  <script src="js/main.js?v={VER}"></script>{THREE_JS if (three and any(m in body for m in ('class="gl-zone"', 'class="open-zone"', 'data-shot='))) else ""}
 </body>
 </html>
 '''
@@ -247,7 +249,7 @@ def us_map():
     pins = []
     for k, x, y, city, mo, yr, status, desc in CITIES:
         color = "#F7B731" if status == "now" else "#3F6FD1"
-        pins.append(f'''          <g class="pin{" active" if status == "now" else ""}" data-key="{k}" tabindex="0" role="button" aria-label="{city}, {mo} {yr} box" data-city="{city}" data-month="{mo}" data-year="{yr}" data-desc="{H.escape(desc)}">
+        pins.append(f'''          <g class="pin{" active" if status == "now" else ""}" data-key="{k}" tabindex="0" role="button" aria-label="{city}, {mo} {yr} box" data-city="{city}" data-month="{mo}" data-year="{yr}" data-desc="{H.escape(desc)}" data-href="{city_url(city)}">
             <circle class="dot" cx="{x}" cy="{y}" r="10" fill="{color}" stroke="#14234F" stroke-width="3"/>
             <text x="{x}" y="{y - 20}" text-anchor="middle" font-family="Figtree, sans-serif" font-size="15" font-weight="600" fill="#14234F">{city.split(",")[0]}</text>
           </g>''')
@@ -372,6 +374,10 @@ STYLE = {  # route card: tile color, sticker color, sticker text color
 _MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 def box_no(c):
     return f"{_MONTHS.index(c[4]) + 1:02d}"
+
+def city_url(city):
+    """city-savannah.html for "Savannah, Georgia"."""
+    return "city-" + city.split(", ")[0].lower().replace(" ", "-") + ".html"
 def route_card(i, c):
     k, x, y, city, mo, yr, status, desc = c
     tone, acc, ink = STYLE[k]
@@ -385,9 +391,44 @@ def route_card(i, c):
             <span class="r-pill">{mo} {yr}</span>
             <button class="r-plus" type="button" aria-expanded="false" aria-controls="rc-{k}" aria-label="What is in the {name} box"><span aria-hidden="true"></span></button>
             {img}
-            <h3>{name}</h3>
+            <h3><a class="r-link" href="{city_url(city)}">{name}</a></h3>
             <div class="r-more" id="rc-{k}"><p class="r-state">{state}</p><p>{desc}</p></div>
           </article>'''
+
+import json as _json
+
+def _meta(c):
+    k, *_ = c
+    tone, acc, ink = STYLE[k]
+    name, state = c[3].split(", ")
+    return {"city": name, "state": ABBR[state], "num": box_no(c), "accent": acc, "ink": ink}
+
+def open_zone(c, title_html, lead, ask, hid="open-title"):
+    """The box-opening scene for one city: skyline, caption and falling boxes."""
+    i = CITIES.index(c)
+    rain = [_meta(n) for n in (CITIES[i + 1:] + CITIES[:i])[:5]]
+    m = _meta(c)
+    attrs = (f' data-city="{c[0]}" data-num="{m["num"]}" data-name="{m["city"]}" data-state="{m["state"]}"'
+             f' data-accent="{m["accent"]}" data-ink="{m["ink"]}" data-rain="{H.escape(_json.dumps(rain), quote=True)}"')
+    return f'''    <section class="open-zone" aria-labelledby="{hid}"{attrs}>
+      <div class="container">
+        <div class="open-head">
+          <h2 id="{hid}" data-lines>{title_html}</h2>
+          <p class="lead" data-rise>{lead}</p>
+        </div>
+      </div>
+      <div class="open-stage">
+        <canvas class="open-canvas" aria-hidden="true"></canvas>
+        <div class="open-caption">
+          <p class="open-reveal">
+            <span class="or-ask">{ask}<span class="or-dots" aria-hidden="true"><i></i><i></i><i></i></span></span>
+            <span class="or-city">{c[3]}</span>
+          </p>
+        </div>
+        <p class="open-fallback">A Marlowby box opening, with the skyline of {c[3].split(", ")[0]} rising out of it and the next months&rsquo; boxes tumbling off the rooftops.</p>
+      </div>
+    </section>'''
+
 
 home = f'''    <div class="gl-zone">
       <canvas class="gl-canvas" aria-hidden="true"></canvas>
@@ -424,24 +465,7 @@ home = f'''    <div class="gl-zone">
       </section>
     </div>
 
-    <section class="open-zone" aria-labelledby="open-title">
-      <div class="container">
-        <div class="open-head">
-          <h2 id="open-title" data-lines>{lines("Open it, and the", "<em>city comes out.</em>")}</h2>
-          <p class="lead" data-rise>Lift the flaps and Savannah is in there: the shops, the squares, the people who made everything inside. Next month another city takes its place.</p>
-        </div>
-      </div>
-      <div class="open-stage">
-        <canvas class="open-canvas" aria-hidden="true"></canvas>
-        <div class="open-caption">
-          <p class="open-reveal">
-            <span class="or-ask">This month&rsquo;s city is<span class="or-dots" aria-hidden="true"><i></i><i></i><i></i></span></span>
-            <span class="or-city">Savannah, Georgia</span>
-          </p>
-        </div>
-        <p class="open-fallback">A box opening, with a city skyline rising out of it and next month&rsquo;s boxes tumbling off the rooftops.</p>
-      </div>
-    </section>
+{open_zone(CITIES[0], lines("Open it, and the", "<em>city comes out.</em>"), "Lift the flaps and Savannah is in there: the shops, the squares, the people who made everything inside. Next month another city takes its place.", "This month&rsquo;s city is")}
 
     <section class="section" aria-labelledby="pick-title">
       <div class="container">
@@ -470,7 +494,7 @@ home = f'''    <div class="gl-zone">
         <ul class="bx-grid" data-rise-group>
 {BOX_GRID}
         </ul>
-        <p class="bx-note note-small">Makers and products shown are illustrative for this concept site. See <a class="link" href="credits.html">credits</a>.</p>
+        <p class="bx-note note-small"><a class="link" href="city-savannah.html">Meet the Savannah makers and open the box</a>. Makers and products shown are illustrative for this concept site; see <a class="link" href="credits.html">works cited</a>.</p>
       </div>
     </section>
 
@@ -794,7 +818,7 @@ detail_imgs = "".join(city_shot(i, c, f' data-key="{c[0]}"' + ("" if i == 0 else
 
 cal_rows = "\n".join(f'''          <li class="cal-row{" is-now" if c[6] == "now" else ""}">
             <div class="cal-when"><span class="cal-mo">{c[4]}</span><span class="cal-yr">{c[5]}</span></div>
-            <div class="cal-city"><h3>{c[3].split(", ")[0]}</h3><p>{c[3].split(", ")[1]} &middot; Box No. {box_no(c)}{" &middot; <b>First box</b>" if c[6] == "now" else ""}</p></div>
+            <div class="cal-city"><h3><a href="{city_url(c[3])}">{c[3].split(", ")[0]}</a></h3><p>{c[3].split(", ")[1]} &middot; Box No. {box_no(c)}{" &middot; <b>First box</b>" if c[6] == "now" else ""}</p></div>
             {chips(c[7])}
             <div class="cal-img">{city_shot(i, c, ' loading="lazy"')}</div>
           </li>''' for i, c in enumerate(CITIES))
@@ -843,6 +867,7 @@ cities = f'''    <section class="c-hero">
           <div class="month"><strong class="m-mo">{sav[4]}</strong> <small class="m-yr">{sav[5]}</small></div>
           <h3>{sav[3]}</h3>
           <p>{sav[7]}</p>
+          <a class="link md-more" href="{city_url(sav[3])}">Open the {sav[3].split(", ")[0]} box</a>
           <a class="btn btn--light btn--sm" href="join.html">Reserve a box</a>
         </aside>
       </div>
@@ -1142,6 +1167,170 @@ page("join.html", "Reserve a Box | Marlowby",
      "Reserve your Marlowby subscription box in three short steps.", join,
      seo=crumbs(("Home", "index.html"), ("Reserve a box", "join.html")))
 
+import json as _json
+# ---------------------------------------------------------------- city pages
+# Facts are real and checkable; makers are illustrative (see Works Cited).
+CITY_INFO = {
+ "sav": dict(
+   blurb="Georgia&rsquo;s oldest city was laid out in 1733 around a grid of public squares, and most of them still stand, shaded by live oaks hung with Spanish moss. Box No. 01 is a walk through them.",
+   facts=["Founded in 1733, Savannah is Georgia&rsquo;s oldest city.",
+          "Twenty-two of the squares in James Oglethorpe&rsquo;s original town plan survive today.",
+          "Benne, the West African name for sesame, has flavoured Lowcountry baking for centuries."],
+   makers=[("Tybee Sugarworks", "Benne praline jar", "Tybee Island"), ("Broughton Candle Co.", "Saltmarsh candle", "Broughton Street"),
+           ("Ogeechee Pepper Co.", "Small-batch pepper sauce", "Starland District")]),
+ "sf": dict(
+   blurb="Santa Fe was founded in 1610, which makes it the oldest state capital in the country, and at about 7,000 feet it is the highest too. Every fall the city smells of green chile roasting in steel drums.",
+   facts=["Founded in 1610, Santa Fe is the oldest state capital in the United States.",
+          "At about 7,000 feet, it is also the highest state capital.",
+          "New Mexico&rsquo;s official state question is &ldquo;Red or green?&rdquo; It is asking which chile you want."],
+   makers=[("Alto Mesa Chile Mill", "Red and green chile blends", "Southside"), ("Two Ravens Clayworks", "Hand-thrown mug", "Canyon Road"),
+           ("Piñon Hollow Roasters", "Piñon coffee", "Railyard District")]),
+ "det": dict(
+   blurb="Detroit built the cars, then the sound: Motown started in a house on West Grand Boulevard. Box No. 03 comes from the printers, roasters and cooks bringing its neighborhoods back.",
+   facts=["The Renaissance Center&rsquo;s central tower is the tallest building in Michigan.",
+          "The Guardian Building, finished in 1929, is known as the &ldquo;Cathedral of Finance&rdquo; for its tiled interior.",
+          "Berry Gordy founded Motown Records in Detroit in 1959."],
+   makers=[("Corktown Inkworks", "Screen-printed tote", "Corktown"), ("Second Shift Roasting", "Small-batch coffee", "Midtown"),
+           ("Grand River Spice Kitchen", "Soul-food spice rub", "Grandmont Rosedale")]),
+ "pme": dict(
+   blurb="Portland is a working harbor first: fishing boats, ferries to the islands and brick warehouses rebuilt after the fire of 1866. The coast road south leads to the oldest lighthouse in Maine.",
+   facts=["Portland Head Light was first lit in 1791 and is the oldest lighthouse in Maine.",
+          "Most of the Old Port&rsquo;s brick buildings went up after the Great Fire of 1866.",
+          "Maine grows nearly all of the wild blueberries harvested in the United States."],
+   makers=[("Casco Bay Confections", "Sea-salt caramels", "Old Port"), ("Back Cove Preserves", "Wild blueberry jam", "Back Cove"),
+           ("Munjoy Hill Fiber Co.", "Hand-dyed wool coasters", "Munjoy Hill")]),
+ "ash": dict(
+   blurb="Asheville sits where the Blue Ridge meets the Smokies, a mountain town of potters, blacksmiths and herb farmers. Box No. 05 brings the honey and the tea from the hollows above it.",
+   facts=["The Blue Ridge Parkway, 469 miles long, passes along the edge of the city.",
+          "The Jackson Building, finished in 1924, was the first skyscraper in western North Carolina.",
+          "The Basilica of St. Lawrence was built with Guastavino tile and has a large freestanding elliptical dome."],
+   makers=[("French Broad Apiary", "Wildflower honey", "River Arts District"), ("Lexington Lane Forge", "Hand-forged bottle opener", "Downtown"),
+           ("High Gap Herb Farm", "Mountain herbal tea", "Madison County")]),
+ "tuc": dict(
+   blurb="Tucson has been farmed for more than 4,000 years, and its food still comes from the desert: mesquite flour, prickly pear and tepary beans. The skies are dark enough that the city limits its lights for the observatories.",
+   facts=["In 2015 Tucson became the first city in the United States named a UNESCO City of Gastronomy.",
+          "Mission San Xavier del Bac was finished in 1797; its east tower never received a dome.",
+          "The saguaro cactus grows wild only in the Sonoran Desert, which surrounds the city."],
+   makers=[("Mesquite &amp; Mano", "Mesquite cookie mix", "Barrio Viejo"), ("Bajada Syrup Co.", "Prickly-pear syrup", "Fourth Avenue"),
+           ("Sonoran Bead Studio", "Beaded keychain", "Mercado District")]),
+ "msp": dict(
+   blurb="Minneapolis is a city of lakes and long winters, with Scandinavian bakeries, a riverfront of old flour mills and trails that circle the water. July is when everyone is outside.",
+   facts=["The IDS Center has been the tallest building in Minnesota since it opened in the 1970s.",
+          "The Foshay Tower, finished in 1929, was designed as a tribute to the Washington Monument.",
+          "The Chain of Lakes is linked by paved trails for walking and biking."],
+   makers=[("Northwoods Pantry Co.", "Wild rice soup mix", "Northeast"), ("Loring Pin Works", "Lake-life enamel pin", "Loring Park"),
+           ("Cedar Avenue Bakehouse", "Cardamom cookies", "Cedar-Riverside")]),
+ "boi": dict(
+   blurb="Boise is a river town under sagebrush foothills, with a greenbelt path along the water and a Basque quarter downtown. In August half the city floats the Boise River on inner tubes.",
+   facts=["The Idaho State Capitol is the only state capitol in the country heated with geothermal water.",
+          "The Boise River Greenbelt is a tree-lined path of more than 25 miles.",
+          "Floating the river through downtown is a summer tradition."],
+   makers=[("Owyhee Chocolate Works", "Huckleberry chocolate", "Hyde Park"), ("Table Rock Roasters", "Locally roasted coffee", "Downtown"),
+           ("Basque Block Leather", "Leather bookmark", "Basque Block")]),
+ "hdr": dict(
+   blurb="Hood River sits in the Columbia River Gorge with Mount Hood to the south and orchards in between. October is harvest: pears, apples and farm stands open along the Fruit Loop.",
+   facts=["Mount Hood, Oregon&rsquo;s highest peak at 11,249 feet, rises south of town.",
+          "The Hood River County Fruit Loop is a 35-mile drive past orchards and farm stands.",
+          "Steady winds through the Gorge have made the town a center for windsurfing and kiteboarding."],
+   makers=[("Gorge Light Orchard", "Pear butter", "Upper Valley"), ("Odell Valley Drying Co.", "Dried-apple chips", "Odell"),
+           ("Oak Street Woodshop", "Hand-turned maple spoon", "Downtown")]),
+ "lou": dict(
+   blurb="Louisville is a river city of shotgun houses, front porches and its own sweets. November is the quiet season between Derbies, and the best time to eat your way down Frankfort Avenue.",
+   facts=["The Kentucky Derby has been run at Churchill Downs every year since 1875.",
+          "A 120-foot steel bat leans against the Louisville Slugger Museum &amp; Factory downtown.",
+          "Benedictine spread was created by Louisville caterer Jennie Benedict around 1900."],
+   makers=[("Crescent Hill Candy Co.", "Modjeska caramels", "Frankfort Avenue"), ("Highlands Pantry", "Benedictine spread mix", "The Highlands"),
+           ("Butchertown Pottery", "Stoneware mug", "Butchertown")]),
+ "lan": dict(
+   blurb="Lancaster County is farm country: red barns, covered bridges and a downtown market that has sold local food since colonial times. December brings the winter markets and fresh pretzels.",
+   facts=["Lancaster Central Market dates to the 1730s and is one of the oldest farmers markets in the country.",
+          "The Julius Sturgis bakery in nearby Lititz, opened in 1861, was the first commercial pretzel bakery in America.",
+          "Lancaster County is home to one of the largest Amish communities in the United States."],
+   makers=[("Lititz Twist Bakery", "Hand-twisted pretzels", "Lititz"), ("Conestoga Kitchen", "Apple butter", "Strasburg"),
+           ("Paradise Lane Quilters", "Quilt-block pot holder", "Paradise")]),
+}
+_MONTH_NAME = dict(zip(_MONTHS, "January February March April May June July August September October November December".split()))
+
+CITY_PAGES = []
+for _i, _c in enumerate(CITIES):
+    _k, _x, _y, _city, _mo, _yr, _status, _desc = _c
+    _name, _state = _city.split(", ")
+    _info = CITY_INFO[_k]
+    _url = city_url(_city)
+    _prev, _next = CITIES[_i - 1], CITIES[(_i + 1) % len(CITIES)]
+    _items = "".join(f"<li>{it}</li>" for it in city_items(_desc))
+    _makers = "\n".join(f'''          <li class="maker"><span class="mk-pin" aria-hidden="true">{PIN}</span><div><h3>{mn}</h3><p>{what} &middot; <span class="muted">{where}</span></p></div></li>'''
+                        for mn, what, where in _info["makers"])
+    _facts = "\n".join(f"          <li>{f}</li>" for f in _info["facts"])
+    _body = f'''    <section class="c-hero city-hero">
+      <div class="container c-hero-grid">
+        <div class="c-hero-copy">
+          <span class="pill pill--amber">Box No. {box_no(_c)} &middot; {_MONTH_NAME[_mo]} {_yr}</span>
+          <h1 data-lines>{lines(_name + ",", "<em>" + _state + ".</em>")}</h1>
+          <p class="lead" data-rise>{_info["blurb"]}</p>
+          <div class="c-actions" data-rise><a class="btn btn--primary" href="join.html">Reserve a box</a><a class="link" href="cities.html#calendar">See all twelve</a></div>
+        </div>
+        <div class="tile tile--navy c-now city-box">
+          <div class="c-now-img">{city_shot(_i, _c, ' loading="eager" fetchpriority="high"')}</div>
+          <p class="c-count">Ships {_MONTH_NAME[_mo]} 1, {_yr}</p>
+        </div>
+      </div>
+    </section>
+
+{open_zone(_c, lines("Open the box.", "<em>" + _name + " comes out.</em>"), f"Scroll to lift the flaps. Every Marlowby box is a city you can open: this one is {_name}, Box No. {box_no(_c)}.", f"Box No. {box_no(_c)} is")}
+
+    <section class="section" aria-labelledby="inbox-title">
+      <div class="container split">
+        <div>
+          <h2 id="inbox-title" data-lines>{lines("In the box")}</h2>
+          <p class="lead" data-rise>Every item comes from an independent business in {_name}, bought at a fair price before the box ships. Previews may change as we sign on makers.</p>
+        </div>
+        <ul class="chips chips--big" data-rise-group>{_items}</ul>
+      </div>
+    </section>
+
+    <section class="section section--tight" aria-labelledby="makers-title">
+      <div class="container">
+        <div class="tile tile--sky">
+          <h2 id="makers-title" class="wc-note-h">The makers</h2>
+          <ul class="makers">
+{_makers}
+          </ul>
+          <p class="note-small" style="margin:18px 0 0">Makers shown are illustrative for this concept site. See <a class="link" href="credits.html">works cited</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="why-title">
+      <div class="container split">
+        <h2 id="why-title" data-lines>{lines("Why " + _name)}</h2>
+        <ul class="rule-list city-facts" data-rise-group>
+{_facts}
+        </ul>
+      </div>
+    </section>
+
+    <nav class="section section--tight city-nav" aria-label="Other boxes on the route">
+      <div class="container city-nav-row">
+        <a class="city-step" href="{city_url(_prev[3])}"><small>&larr; Box No. {box_no(_prev)} &middot; {_prev[4]}</small><strong>{_prev[3].split(", ")[0]}</strong></a>
+        <a class="city-step city-step--next" href="{city_url(_next[3])}"><small>Box No. {box_no(_next)} &middot; {_next[4]} &rarr;</small><strong>{_next[3].split(", ")[0]}</strong></a>
+      </div>
+    </nav>
+
+{CTA}'''
+    _ld = jsonld({"@context": "https://schema.org", "@type": "Product",
+                  "name": f"Marlowby Box No. {box_no(_c)}: {_city}",
+                  "description": _desc, "brand": {"@type": "Brand", "name": "Marlowby"},
+                  "image": SITE + f"img/shots/city-{box_no(_c)}.webp",
+                  "offers": {"@type": "Offer", "price": "49.00", "priceCurrency": "USD",
+                             "availability": "https://schema.org/PreOrder", "url": SITE + "join.html"}})
+    page(_url, f"{_name}, {_state} | Box No. {box_no(_c)} | Marlowby",
+         f"Marlowby Box No. {box_no(_c)}, {_MONTH_NAME[_mo]} {_yr}: what is in the {_name} box, the local makers behind it, and why {_name}.",
+         _body, '\n  <link rel="stylesheet" href="css/pages.css?v={VER}">\n  <link rel="stylesheet" href="css/home.css?v={VER}">', three=True,
+         seo=_ld + crumbs(("Home", "index.html"), ("Cities", "cities.html"), (_name, _url)))
+    CITY_PAGES.append((_url, _name))
+
+
 # ================================================================== SEARCH
 search_body = f'''{page_head(("Search", "Marlowby."), "Find a plan, a city, a maker or an answer. Results come from every page on this site.")}
 
@@ -1186,6 +1375,7 @@ WORKS = [
   "“Make the box open and show the month’s city skyline popping out, with boxes falling from the skyline” prompt. " + CC.format(v="Claude Opus 5", d="15 Nov. 2026"),
   "“Find sites similar to Marlowby, take their best ideas and fix their worst habits where Marlowby has them” prompt. " + CC.format(v="Claude Opus 5.5", d="25 Nov. 2026"),
   "“Rate the site against the official rubric, fix what is lacking and find ways to exceed it” prompt. " + CC.format(v="Claude Opus 5.5", d="25 Nov. 2026"),
+  "“Execute everything needed to take the site above and beyond the rubric” prompt. " + CC.format(v="Claude Opus 5.5", d="26 Nov. 2026"),
   # design and market research
   "<em>Atlas Coffee Club</em>, atlascoffeeclub.com. Accessed 25 Nov. 2026.",
   "<em>Bella Kitchenware</em>, bellakitchenware.com. Accessed 7 Nov. 2026.",
@@ -1210,6 +1400,7 @@ WORKS = [
 # Self-created work: one author, so every entry after the first uses "---".
 SELF = [
   "“Box-Opening Scene with the Savannah Skyline.” Self-created 3D animation, coded with three.js, with AI assistance as cited. 15 Nov. 2026.",
+  "“City Skylines of the 2027 Route.” Self-created 3D models of eleven city skylines from their public landmarks, coded with three.js, with AI assistance as cited. 26 Nov. 2026.",
   "“Box Photographs, Shelf Room and Falling-Box Hero.” Self-created 3D graphics, coded with three.js and rendered to WebP files at build time, with AI assistance as cited. 2026.",
   "“Map of the 2027 Route.” Self-created SVG map plotted from public latitude and longitude points. 2026.",
   "<em>Marlowby</em>. Self-created website: page layout, written content, navigation and code, with AI assistance as cited. 2026, gopsmonkey.github.io/marlowby.",
@@ -1334,6 +1525,8 @@ _INDEX_PAGES = ["index.html", "how-it-works.html", "plans.html", "cities.html",
 _LABEL = {"index.html": "Home", "how-it-works.html": "How it works", "plans.html": "Plans",
           "cities.html": "Cities", "about.html": "About", "faq.html": "FAQ",
           "join.html": "Reserve a box", "credits.html": "Works cited", "accessibility.html": "Accessibility"}
+_INDEX_PAGES += [u for u, _ in CITY_PAGES]
+_LABEL.update({u: n for u, n in CITY_PAGES})
 _records = []
 for _fn in _INDEX_PAGES:
     _html = (OUT / _fn).read_text()
@@ -1358,7 +1551,7 @@ print("search index:", len(_records), "records")
 
 PUBLIC = [("index.html", "1.0"), ("how-it-works.html", "0.8"), ("plans.html", "0.9"),
           ("cities.html", "0.8"), ("about.html", "0.7"), ("faq.html", "0.7"),
-          ("join.html", "0.9"), ("search.html", "0.5"), ("credits.html", "0.3"), ("accessibility.html", "0.3")]
+          ("join.html", "0.9"), ("search.html", "0.5"), ("credits.html", "0.3"), ("accessibility.html", "0.3")] + [(u, "0.7") for u, _ in CITY_PAGES]
 _today = __import__("datetime").date.today().isoformat()
 (OUT / "sitemap.xml").write_text(
     '<?xml version="1.0" encoding="UTF-8"?>\n'
