@@ -278,6 +278,36 @@
     });
   }
 
+  /* ---------- Contact form: errors beside each field, linked to it ---------- */
+  const contact = document.getElementById("contact-form");
+  if (contact) {
+    const msg = contact.querySelector(".form-msg");
+    const check = (f) => {
+      const el = f.querySelector("input, textarea");
+      const ok = el.value.trim() !== "" && el.checkValidity();
+      f.classList.toggle("invalid", !ok);
+      el.setAttribute("aria-invalid", String(!ok));
+      return ok;
+    };
+    contact.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fields = [...contact.querySelectorAll(".field[data-required]")];
+      const bad = fields.filter((f) => !check(f));
+      if (bad.length) {
+        msg.textContent = `Please fix ${bad.length === 1 ? "the highlighted field" : `the ${bad.length} highlighted fields`}.`;
+        bad[0].querySelector("input, textarea").focus();
+        return;
+      }
+      msg.textContent = "Thanks! We will reply within one business day.";
+      contact.reset();
+      fields.forEach((f) => f.querySelector("[aria-invalid]")?.setAttribute("aria-invalid", "false"));
+    });
+    contact.addEventListener("input", (e) => {
+      const f = e.target.closest(".field.invalid");
+      if (f) check(f);
+    });
+  }
+
   /* ---------- Join: multi-step sign-up ---------- */
   const join = document.getElementById("join-form");
   if (join) {

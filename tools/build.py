@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "55"  # bump to make browsers reload css/js
+VER = "57"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -165,6 +165,8 @@ def page(filename, title, desc, body, extra_css="", three=False, seo="", robots=
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title}</title>
   <meta name="description" content="{desc}">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="theme-color" content="#14234F">
   <link rel="icon" href="img/mark.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
@@ -1047,12 +1049,12 @@ faq = f'''{page_head(("Questions,", "answered."), "Boxes, shipping, your account
             <p class="lead">Questions, city ideas or maker partnerships. We answer within one business day.</p>
             <p><strong>hello@marlowby.example</strong><br>Monday to Friday, 9 a.m. to 6 p.m. Eastern</p>
           </div>
-          <form id="contact-form" novalidate onsubmit="event.preventDefault(); var m=this.querySelector('.form-msg'); if(this.checkValidity()){{m.textContent='Thanks! We will reply within one business day.'; this.reset();}} else {{m.textContent='Please add your name, a valid email and a message.';}}">
-            <div class="field"><label for="c-name">Name</label><input id="c-name" name="name" required autocomplete="name"></div>
-            <div class="field"><label for="c-email">Email</label><input id="c-email" name="email" type="email" required autocomplete="email"></div>
+          <form id="contact-form" novalidate>
+            <div class="field" data-required><label for="c-name">Name</label><input id="c-name" name="name" required autocomplete="name" aria-describedby="e-c-name"><p class="error" id="e-c-name">Please enter your name.</p></div>
+            <div class="field" data-required><label for="c-email">Email</label><input id="c-email" name="email" type="email" required autocomplete="email" aria-describedby="e-c-email"><p class="error" id="e-c-email">Please enter a valid email.</p></div>
             <div class="field"><label for="c-topic">Topic</label>
               <select id="c-topic" name="topic"><option>A question</option><option>Nominate a city</option><option>Become a maker partner</option><option>Help with an order</option></select></div>
-            <div class="field"><label for="c-msg">Message</label><textarea id="c-msg" name="message" rows="5" required></textarea></div>
+            <div class="field" data-required><label for="c-msg">Message</label><textarea id="c-msg" name="message" rows="5" required aria-describedby="e-c-msg"></textarea><p class="error" id="e-c-msg">Please write a message.</p></div>
             <button class="btn btn--primary btn--block" type="submit">Send</button>
             <p class="form-msg" role="status" aria-live="polite"></p>
           </form>
