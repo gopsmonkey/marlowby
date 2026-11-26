@@ -4,3 +4,4 @@ __pycache__/
 .playwright-mcp/
 tools/render/node_modules/
 tools/render/package-lock.json
+.swarm/
