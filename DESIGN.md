@@ -36,7 +36,7 @@ Four fonts, each with one job. Rules live in `css/type.css` and the mono list in
 - Boxes: rounded boxes with canvas-drawn paper texture, the wordmark, a numbered city sticker on the side and a skyline print on the lid.
 - Lighting: a studio environment map (RoomEnvironment) plus one warm key light, with ACES tone mapping and soft shadows.
 - Shelf room: plaster wall, framed city map, oak top on a navy sideboard with brass knobs, books and a vase.
-- Product photos are rendered once on page load from the same box model, so they always match the hero.
+- Product photos come from the same box model, so they always match the hero. They are rendered once at build time by `tools/render-shots.sh` and saved as WebP in `img/shots/`.
 
 ## Motion
 | What | Spec |
