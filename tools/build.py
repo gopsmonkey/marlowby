@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "57"  # bump to make browsers reload css/js
+VER = "58"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -1177,7 +1177,7 @@ CITY_INFO = {
    blurb="Georgia&rsquo;s oldest city was laid out in 1733 around a grid of public squares, and most of them still stand, shaded by live oaks hung with Spanish moss. Box No. 01 is a walk through them.",
    facts=["Founded in 1733, Savannah is Georgia&rsquo;s oldest city.",
           "Twenty-two of the squares in James Oglethorpe&rsquo;s original town plan survive today.",
-          "Benne, the West African name for sesame, has flavoured Lowcountry baking for centuries."],
+          "Benne, the West African name for sesame, has flavored Lowcountry baking for centuries."],
    makers=[("Tybee Sugarworks", "Benne praline jar", "Tybee Island"), ("Broughton Candle Co.", "Saltmarsh candle", "Broughton Street"),
            ("Ogeechee Pepper Co.", "Small-batch pepper sauce", "Starland District")]),
  "sf": dict(
@@ -1462,7 +1462,7 @@ page("credits.html", "Works Cited | Marlowby",
 
 # ================================================================== ACCESSIBILITY
 A11Y = [
-  ("Readable for low vision", "Text meets WCAG 2.2 AA contrast. Every colour pair was measured, including text over the hero sky, where a scrim keeps the headline readable as clouds drift behind it. Pages reflow at 400% zoom without sideways scrolling."),
+  ("Readable for low vision", "Text meets WCAG 2.2 AA contrast. Every color pair was measured, including text over the hero sky, where a scrim keeps the headline readable as clouds drift behind it. Pages reflow at 400% zoom without sideways scrolling."),
   ("Usable without a mouse", "Every link, button, map pin and form control works from the keyboard, with a visible focus ring. A skip link jumps past the menu. Buttons and links are at least 44 by 44 pixels for touch."),
   ("Clear to screen readers", "Headings follow in order on every page. Images have text alternatives, and the 3D scenes, which are decorative, are hidden from screen readers with a written description in their place. Search results, FAQ filters, votes and form errors are announced as they change."),
   ("Calm motion", "If your device asks for reduced motion, the scroll effects, the rotating city name and the box animations stay still. The scrolling announcement bar has a pause button."),
@@ -1485,7 +1485,7 @@ a11y = f'''{page_head(("Built for", "everyone."), "Marlowby aims to meet WCAG 2.
       <div class="container" style="max-width:880px">
         <div class="tile tile--sky">
           <h2 id="test-title" class="wc-note-h">How we checked</h2>
-          <p>Every page passes the W3C HTML validator with no errors and scores 100 for accessibility in Google Lighthouse. We tested keyboard use by hand, measured contrast for each colour pair, and checked the site in Chrome and Safari&rsquo;s WebKit engine, with motion on and off.</p>
+          <p>Every page passes the W3C HTML validator with no errors and scores 100 for accessibility in Google Lighthouse. We tested keyboard use by hand, measured contrast for each color pair, and checked the site in Chrome and Safari&rsquo;s WebKit engine, with motion on and off.</p>
           <p>Automated tools catch only part of the picture. The site has not yet been reviewed by a person who uses a screen reader every day. If anything gets in your way, <a class="link" href="faq.html#contact">tell us</a> and we will fix it.</p>
         </div>
       </div>
