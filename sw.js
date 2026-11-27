@@ -3,7 +3,7 @@
    Pages: network first, so an online visitor always gets the newest copy, with
    the cached copy (or the 404 page) when there is no connection.
    Everything else is versioned (?v=) or never changes: cache first. */
-const CACHE = "marlowby-v58";
+const CACHE = "marlowby-v59";
 const PRECACHE = [
   "./",
   "404.html",
@@ -22,10 +22,10 @@ const PRECACHE = [
   "city-savannah.html",
   "city-tucson.html",
   "credits.html",
-  "css/home.css?v=58",
-  "css/pages.css?v=58",
-  "css/styles.css?v=58",
-  "css/type.css?v=58",
+  "css/home.css?v=59",
+  "css/pages.css?v=59",
+  "css/styles.css?v=59",
+  "css/type.css?v=59",
   "faq.html",
   "how-it-works.html",
   "img/apple-touch-icon.png",
@@ -57,9 +57,9 @@ const PRECACHE = [
   "join.html?plan=Neighborhood&amp;gift=1",
   "join.html?plan=Postcard",
   "join.html?plan=Postcard&amp;gift=1",
-  "js/main.js?v=58",
-  "js/scene.js?v=58",
-  "js/skylines.js?v=58",
+  "js/main.js?v=59",
+  "js/scene.js?v=59",
+  "js/skylines.js?v=59",
   "manifest.webmanifest",
   "plans.html",
   "search-index.json",

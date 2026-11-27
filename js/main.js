@@ -38,15 +38,13 @@
   });
 
   /* ---------- What's inside: play each item's story once it is on screen ---------- */
-  const bxGrid = document.querySelector(".bx-grid");
-  if (bxGrid && "IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    bxGrid.classList.add("bx-ready");
-    const bxIO = new IntersectionObserver((entries) => {
-      if (!entries.some((e) => e.isIntersecting)) return;
-      bxGrid.classList.add("is-in");
-      bxIO.disconnect();
-    }, { threshold: 0.35 });
-    bxIO.observe(bxGrid);
+  if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const bxIO = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add("is-in");
+      bxIO.unobserve(e.target);
+    }), { threshold: 0.35 });
+    document.querySelectorAll(".bx-grid").forEach((g) => { g.classList.add("bx-ready"); bxIO.observe(g); });
   }
 
   /* ---------- Launch countdown (home banner) ---------- */

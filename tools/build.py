@@ -2,7 +2,7 @@
 import sys, pathlib, html as H
 
 OUT = pathlib.Path(sys.argv[1])
-VER = "58"  # bump to make browsers reload css/js
+VER = "59"  # bump to make browsers reload css/js
 
 # ------------------------------------------------------------------ helpers
 PIN = ('<svg class="wm-o" viewBox="0 0 50 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" '
@@ -332,6 +332,19 @@ ITEM_SVG = {
  "coaster": """<g class="ani-wind"><circle class="ani-ring" style="--k:2" cx="60" cy="64" r="34" fill="#FDE9BC"/>
    <circle class="ani-ring" style="--k:1" cx="60" cy="64" r="23" fill="none"/><circle class="ani-ring" style="--k:0" cx="60" cy="64" r="12" fill="#F7B731"/>
    <path d="M26 64h68M60 30v68" stroke-width="2.2" opacity=".55"/></g>""",
+ "guide": """<g class="ani-lid"><path d="M30 30h30v64H30z" fill="#3F6FD1"/><path d="M38 44h14" stroke="#FCEAD6"/></g>
+   <path d="M60 30h30v64H60z" fill="#FCEAD6"/>
+   <path class="ani-write" style="--k:0" d="M67 46h16"/><path class="ani-write" style="--k:1" d="M67 58h16"/><path class="ani-write" style="--k:2" d="M67 70h10"/>""",
+ "card": """<path d="M28 34h64v56H28z" fill="#fff"/>
+   <circle class="ani-ring" style="--k:0" cx="46" cy="54" r="9" fill="#F7B731"/>
+   <path class="ani-write" style="--k:0" d="M62 50h20"/><path class="ani-write" style="--k:1" d="M62 60h14"/>
+   <path class="ani-write" style="--k:2" d="M38 76h44"/>""",
+ "recipe": """<path d="M32 26h56v68H32z" fill="#FCEAD6"/>
+   <circle class="ani-drop" style="--k:0" cx="48" cy="44" r="6" fill="#F7B731"/><circle class="ani-drop" style="--k:1" cx="62" cy="40" r="6" fill="#F7B731"/><circle class="ani-drop" style="--k:2" cx="74" cy="46" r="6" fill="#F7B731"/>
+   <path class="ani-write" style="--k:0" d="M42 64h36"/><path class="ani-write" style="--k:1" d="M42 76h26"/>""",
+ "workshop": """<path d="M24 32h72v48H24z" fill="#E4EDFB"/><path d="M48 92h24M60 80v12"/>
+   <circle class="ani-ring" style="--k:0" cx="60" cy="56" r="14" fill="#F7B731"/>
+   <path class="ani-pin" d="M56 49v14l11-7z" fill="#14234F"/>""",
  "map": """<g class="ani-unfold"><path d="M24 38l24-10 24 10 24-10v56l-24 10-24-10-24 10z" fill="#E4EDFB"/>
    <path d="M48 28v56M72 38v56" /></g>
    <path class="ani-pin" d="M78 46c6 0 10 4 10 9 0 7-10 17-10 17S68 62 68 55c0-5 4-9 10-9z" fill="#F7B731"/>""",
@@ -346,7 +359,7 @@ BOX_ITEMS = [
  ("map", "Walking map of the squares", "Drawn for Marlowby", "In every box"),
 ]
 
-def box_item(i, key, name, maker, cat):
+def box_item(i, key, name, maker, cat, h="h3"):
     return f'''          <li class="bx-item" style="--i:{i}">
             <div class="bx-art">
               <svg viewBox="0 0 120 120" role="img" aria-label="{H.escape(name)}">
@@ -356,11 +369,28 @@ def box_item(i, key, name, maker, cat):
               </svg>
             </div>
             <p class="bx-cat">{cat}</p>
-            <h3 class="bx-name">{name}</h3>
+            <{h} class="bx-name">{name}</{h}>
             <p class="bx-maker">{maker}</p>
           </li>'''
 
 BOX_GRID = "\n".join(box_item(n, *it) for n, it in enumerate(BOX_ITEMS))
+
+# How it works: Box No. 01 (Savannah) as the example under each part of the box
+def sav_example(items):
+    cards = "\n".join(box_item(n, *it, h="h4") for n, it in enumerate(items))
+    return f'''<p class="ex-label">In the Savannah box</p>
+          <ul class="bx-grid bx-grid--mini">
+{cards}
+          </ul>'''
+SAV_EXAMPLES = {
+ "goods": [it for it in BOX_ITEMS if it[0] != "map"],
+ "guide": [("guide", "Twenty-two squares, one walk", "Written with Savannah locals", "Field guide")],
+ "map": [it for it in BOX_ITEMS if it[0] == "map"],
+ "cards": [("card", "How the pralines are made", "Tybee Sugarworks", "Maker card"),
+           ("card", "Pouring a saltmarsh candle", "Broughton Candle Co.", "Maker card")],
+ "exp": [("recipe", "Benne wafer recipe", "Neighborhood plan", "Experience"),
+         ("workshop", "Live sweetgrass weaving class", "Grand Tour plan", "Experience")],
+}
 
 ABBR = {"Georgia": "GA", "New Mexico": "NM", "Michigan": "MI", "Maine": "ME", "North Carolina": "NC",
         "Arizona": "AZ", "Minnesota": "MN", "Idaho": "ID", "Oregon": "OR", "Kentucky": "KY",
@@ -619,11 +649,16 @@ hiw = f'''{page_head(("A city, packed", "into a box."), "Here is what happens be
           <div class="frame" data-rise style="background:#fff;margin-top:28px">{shot("neighborhood", "A Marlowby box from Savannah")}</div>
         </div>
         <ul class="rule-list" data-rise-group>
-          <li><h3>Local goods</h3><p class="muted">4 to 12 items made or sold by independent businesses in that city: food, home goods, art.</p></li>
-          <li><h3>The field guide</h3><p class="muted">A small booklet on the city&rsquo;s history, neighborhoods and food, written with locals.</p></li>
-          <li><h3>A fold-out map</h3><p class="muted">Every shop in the box is marked, plus the places locals say not to miss.</p></li>
-          <li><h3>Maker cards</h3><p class="muted">One card per item: who made it, how, and where to reorder.</p></li>
-          <li><h3>An experience</h3><p class="muted">In Neighborhood and Grand Tour: a recipe, playlist, craft or live workshop from the city.</p></li>
+          <li><h3>Local goods</h3><p class="muted">4 to 12 items made or sold by independent businesses in that city: food, home goods, art.</p>
+          {sav_example(SAV_EXAMPLES["goods"])}</li>
+          <li><h3>The field guide</h3><p class="muted">A small booklet on the city&rsquo;s history, neighborhoods and food, written with locals.</p>
+          {sav_example(SAV_EXAMPLES["guide"])}</li>
+          <li><h3>A fold-out map</h3><p class="muted">Every shop in the box is marked, plus the places locals say not to miss.</p>
+          {sav_example(SAV_EXAMPLES["map"])}</li>
+          <li><h3>Maker cards</h3><p class="muted">One card per item: who made it, how, and where to reorder.</p>
+          {sav_example(SAV_EXAMPLES["cards"])}</li>
+          <li><h3>An experience</h3><p class="muted">In Neighborhood and Grand Tour: a recipe, playlist, craft or live workshop from the city.</p>
+          {sav_example(SAV_EXAMPLES["exp"])}</li>
         </ul>
       </div>
     </section>
@@ -643,7 +678,8 @@ hiw = f'''{page_head(("A city, packed", "into a box."), "Here is what happens be
 
 {CTA}'''
 page("how-it-works.html", "How It Works | Marlowby",
-     "How Marlowby works: choose a plan, we curate goods from local makers, and your box ships on the 1st of every month.", hiw, three=True,
+     "How Marlowby works: choose a plan, we curate goods from local makers, and your box ships on the 1st of every month.", hiw,
+     '\n  <link rel="stylesheet" href="css/home.css?v={VER}">', three=True,
      seo=crumbs(("Home", "index.html"), ("How it works", "how-it-works.html")))
 
 # ================================================================== PLANS
