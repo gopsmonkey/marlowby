@@ -5,3 +5,4 @@ __pycache__/
 tools/render/node_modules/
 tools/render/package-lock.json
 .swarm/
+ruvector.db
